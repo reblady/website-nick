@@ -1,164 +1,116 @@
-// ====================================================
-// reblady.de — site behavior
-// ====================================================
+(() => {
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-/* ---------- 1. Content strings (DE now, EN-ready later) ----------
-   Add an `en` object with the same keys and wire up a language
-   switch later; applyStrings() already supports any locale key. */
-const STRINGS = {
-  de: {
-    "hero.name": "Nick Tissen",
-    "hero.motto": "Content, Code und was gerade entsteht.",
-    "hero.handle": "@reblady",
-    "status.loading": "Status wird geladen …",
-    "status.online": "Gerade online",
-    "status.idle": "Abwesend",
-    "status.dnd": "Nicht stören",
-    "status.offline": "Gerade offline",
-    "status.unavailable": "Status nicht verfügbar",
-    "featured.label": "Aktuell",
-    "featured.title": "Aktuelles Projekt",
-    "featured.desc": "Woran ich gerade arbeite — folgt in Kürze.",
-    "featured.cta": "Mehr dazu",
-    "updates.label": "Aktuelles",
-    "updates.empty": "Noch keine Updates.",
-    "links.youtube": "YouTube"
+  /* =====================================================================
+     THEME TOGGLE — persists via localStorage, falls back to system preference
+  ===================================================================== */
+  const root = document.body;
+  const themeToggle = document.getElementById('themeToggle');
+  const THEME_KEY = 'reblady-theme';
+
+  function applyTheme(theme) {
+    root.setAttribute('data-theme', theme);
+    localStorage.setItem(THEME_KEY, theme);
   }
-};
 
-function applyStrings(lang) {
-  const dict = STRINGS[lang] || STRINGS.de;
-  document.querySelectorAll("[data-i18n]").forEach((el) => {
-    const key = el.getAttribute("data-i18n");
-    if (dict[key]) el.textContent = dict[key];
+  const savedTheme = localStorage.getItem(THEME_KEY);
+  if (savedTheme) {
+    applyTheme(savedTheme);
+  } else {
+    const prefersLight = window.matchMedia('(prefers-color-scheme: light)').matches;
+    applyTheme(prefersLight ? 'light' : 'dark');
+  }
+
+  themeToggle.addEventListener('click', () => {
+    const current = root.getAttribute('data-theme');
+    applyTheme(current === 'dark' ? 'light' : 'dark');
   });
-}
 
-/* ---------- 2. Theme handling ---------- */
-const THEME_KEY = "reblady-theme";
+  /* =====================================================================
+     CONDENSED HEADER — fades in once the hero has scrolled mostly out of view
+     Single cheap IntersectionObserver, no scroll listener needed for this part.
+  ===================================================================== */
+  const hero = document.getElementById('hero');
+  const condensedHeader = document.getElementById('condensedHeader');
+  const bigName = document.getElementById('bigName');
 
-function getPreferredTheme() {
-  const stored = localStorage.getItem(THEME_KEY);
-  if (stored === "light" || stored === "dark") return stored;
-  return window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
-}
+  new IntersectionObserver(([entry]) => {
+    const pastHero = !entry.isIntersecting;
+    condensedHeader.classList.toggle('visible', pastHero);
+    bigName.style.opacity = pastHero ? '0.35' : '1';
+  }, { threshold: 0.15 }).observe(hero);
 
-function setTheme(theme) {
-  document.documentElement.setAttribute("data-theme", theme);
-  localStorage.setItem(THEME_KEY, theme);
-}
+  /* =====================================================================
+     PINNED HORIZONTAL LINK GALLERY
+     Vertical scroll inside the tall wrapper is converted into horizontal
+     motion of the card row while it's pinned. Skipped entirely under
+     prefers-reduced-motion — the CSS fallback turns it into a plain,
+     natively scrollable row instead, so no JS positioning is needed there.
+  ===================================================================== */
+  const hOuter = document.getElementById('hOuter');
+  const hRow = document.getElementById('hRow');
+  const dockWrap = document.getElementById('dockWrap');
 
-function initTheme() {
-  setTheme(getPreferredTheme());
-  const toggle = document.getElementById("themeToggle");
-  toggle.addEventListener("click", () => {
-    const current = document.documentElement.getAttribute("data-theme");
-    setTheme(current === "dark" ? "light" : "dark");
-  });
-}
+  if (!reduceMotion) {
+    let hDistance = 0;
 
-/* ---------- 3. Discord status via Lanyard (no OAuth needed) ---------- */
-// Fill in your Discord user ID below. Lanyard only works if you've joined
-// the Lanyard support Discord server at least once: https://discord.gg/lanyard
-const DISCORD_USER_ID = "YOUR_DISCORD_ID_HERE";
-
-async function loadDiscordStatus() {
-  const dot = document.getElementById("statusDot");
-  const text = document.getElementById("statusText");
-  const dict = STRINGS.de;
-
-  if (!DISCORD_USER_ID || DISCORD_USER_ID === "YOUR_DISCORD_ID_HERE") {
-    text.textContent = dict["status.unavailable"];
-    return;
-  }
-
-  try {
-    const res = await fetch(`https://api.lanyard.rest/v1/users/${DISCORD_USER_ID}`);
-    if (!res.ok) throw new Error("Lanyard request failed");
-    const json = await res.json();
-    const status = json?.data?.discord_status || "offline";
-    const key = `status.${status}`;
-    dot.setAttribute("data-state", status);
-    text.textContent = dict[key] || dict["status.offline"];
-  } catch (err) {
-    dot.setAttribute("data-state", "offline");
-    text.textContent = dict["status.unavailable"];
-  }
-}
-
-/* ---------- 4. Scroll-storytelling: mini header condenses in ---------- */
-function initScrollHeader() {
-  const hero = document.getElementById("hero");
-  const miniHeader = document.getElementById("miniHeader");
-
-  const observer = new IntersectionObserver(
-    ([entry]) => {
-      miniHeader.classList.toggle("is-visible", !entry.isIntersecting);
-    },
-    { threshold: 0, rootMargin: "-70% 0px 0px 0px" }
-  );
-
-  observer.observe(hero);
-}
-
-/* ---------- 5. Reveal sections on scroll ---------- */
-function initRevealSections() {
-  const items = document.querySelectorAll("[data-reveal]");
-  const observer = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add("is-visible");
-          observer.unobserve(entry.target);
-        }
-      });
-    },
-    { threshold: 0.15 }
-  );
-  items.forEach((el) => observer.observe(el));
-}
-
-/* ---------- 6. Aktuelles feed ---------- */
-// For now this reads a local JSON file. Later, the Aktuelles admin UI will
-// write to this same shape via the GitHub API / Cloudflare Worker.
-async function loadUpdates() {
-  const list = document.getElementById("updatesList");
-  try {
-    const res = await fetch("data/updates.json");
-    if (!res.ok) throw new Error("updates.json not found");
-    const updates = await res.json();
-
-    if (!Array.isArray(updates) || updates.length === 0) {
-      list.innerHTML = `<li class="updates-list__empty">${STRINGS.de["updates.empty"]}</li>`;
-      return;
+    function measure() {
+      const rowWidth = hRow.scrollWidth;
+      hDistance = Math.max(0, rowWidth - window.innerWidth + 64);
+      hOuter.style.height = (window.innerHeight + hDistance) + 'px';
     }
+    measure();
+    window.addEventListener('resize', measure);
 
-    list.innerHTML = updates
-      .map(
-        (u) => `
-        <li class="update-item glass">
-          <span class="update-item__date">${escapeHtml(u.date || "")}</span>
-          <p class="update-item__text">${escapeHtml(u.text || "")}</p>
-        </li>`
-      )
-      .join("");
-  } catch (err) {
-    list.innerHTML = `<li class="updates-list__empty">${STRINGS.de["updates.empty"]}</li>`;
+    let ticking = false;
+    function onScroll() {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        const rect = hOuter.getBoundingClientRect();
+        const start = -rect.top;
+        const progress = Math.min(Math.max(start / (hDistance || 1), 0), 1);
+        hRow.style.transform = `translate3d(${-progress * hDistance}px,0,0)`;
+
+        const active = rect.top <= 0 && rect.bottom > window.innerHeight;
+        dockWrap.classList.toggle('hidden', active);
+
+        ticking = false;
+      });
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
   }
-}
 
-function escapeHtml(str) {
-  const div = document.createElement("div");
-  div.textContent = str;
-  return div.innerHTML;
-}
+  /* =====================================================================
+     LANYARD — live Discord presence for the status dot
+     Replace DISCORD_USER_ID below with your actual Discord user ID
+     (Discord Settings → Advanced → Developer Mode, then right-click your
+     name → "Copy User ID"). You must also be a member of the Lanyard
+     Discord server for this to work: https://discord.gg/lanyard
+  ===================================================================== */
+  const DISCORD_USER_ID = 'DISCORD_USER_ID'; // <-- replace this
+  const statusDot = document.getElementById('statusDot');
+  const statusText = document.getElementById('statusText');
 
-/* ---------- Init ---------- */
-document.addEventListener("DOMContentLoaded", () => {
-  applyStrings("de");
-  initTheme();
-  loadDiscordStatus();
-  initScrollHeader();
-  initRevealSections();
-  loadUpdates();
-});
+  async function updateDiscordStatus() {
+    if (DISCORD_USER_ID === 'DISCORD_USER_ID') return; // not configured yet
+    try {
+      const res = await fetch(`https://api.lanyard.rest/v1/users/${DISCORD_USER_ID}`);
+      const json = await res.json();
+      if (!json.success) return;
+
+      const status = json.data.discord_status; // "online" | "idle" | "dnd" | "offline"
+      statusDot.className = 'dot ' + (status === 'offline' ? '' : status);
+
+      const labels = { online: 'Online', idle: 'Abwesend', dnd: 'Nicht stören', offline: 'Offline' };
+      statusText.textContent = labels[status] || 'Discord';
+    } catch (err) {
+      // fails silently — the dot just stays in its default (offline) state
+      console.warn('Lanyard status could not be loaded:', err);
+    }
+  }
+
+  updateDiscordStatus();
+  setInterval(updateDiscordStatus, 60000); // refresh every minute, no need for anything faster
+})();
