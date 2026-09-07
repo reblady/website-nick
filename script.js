@@ -2,6 +2,61 @@
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   /* =====================================================================
+     ADAPTIVE LOW-POWER MODE
+     Measures real frame timing instead of guessing from the browser name
+     (which doesn't work reliably anyway — Zen Browser, for example,
+     identifies itself as plain Firefox). Two passes:
+       1. A quick idle probe right at load, to catch browsers/devices that
+          are already struggling before any interaction happens.
+       2. Continuous monitoring while the pinned horizontal gallery is
+          engaged, since that's the heaviest moment on the page.
+     A confirmed "low power" verdict is remembered in localStorage, so a
+     returning visitor on the same device gets the lightweight version
+     immediately, without re-suffering through the laggy first attempt.
+  ===================================================================== */
+  const LOW_POWER_KEY = 'reblady-low-power';
+
+  function enableLowPower() {
+    document.documentElement.classList.add('low-power');
+    localStorage.setItem(LOW_POWER_KEY, '1');
+  }
+
+  if (localStorage.getItem(LOW_POWER_KEY) === '1') {
+    document.documentElement.classList.add('low-power');
+  } else if (!reduceMotion) {
+    // idle probe: sample ~40 frames right after load
+    let frames = 0, badFrames = 0, last = performance.now();
+    function idleProbe(now) {
+      const delta = now - last;
+      last = now;
+      frames++;
+      if (delta > 32) badFrames++; // slower than ~30fps for this frame
+      if (frames < 40) {
+        requestAnimationFrame(idleProbe);
+      } else if (badFrames / frames > 0.35) {
+        enableLowPower();
+      }
+    }
+    requestAnimationFrame(idleProbe);
+
+    // live probe: keep sampling specifically while the horizontal gallery is active,
+    // since that's the real stress test (scroll + fixed glass elements together)
+    let galleryFrames = 0, galleryBadFrames = 0, galleryLast = null;
+    window.__reportGalleryFrame = function (now, isActive) {
+      if (!isActive) { galleryLast = null; return; }
+      if (galleryLast !== null) {
+        const delta = now - galleryLast;
+        galleryFrames++;
+        if (delta > 32) galleryBadFrames++;
+        if (galleryFrames > 30 && galleryBadFrames / galleryFrames > 0.35) {
+          enableLowPower();
+        }
+      }
+      galleryLast = now;
+    };
+  }
+
+  /* =====================================================================
      THEME TOGGLE — persists via localStorage, falls back to system preference
   ===================================================================== */
   const root = document.body;
@@ -74,6 +129,7 @@
 
         const active = rect.top <= 0 && rect.bottom > window.innerHeight;
         dockWrap.classList.toggle('hidden', active);
+        if (window.__reportGalleryFrame) window.__reportGalleryFrame(performance.now(), active);
 
         ticking = false;
       });

@@ -311,6 +311,22 @@ a { color: inherit; }
 .closing-note { font-size: 0.72rem; color: var(--text-secondary); margin: 0; }
 
 /* =====================================================================
+   LOW-POWER MODE
+   Set automatically by script.js after measuring real frame timing —
+   never guessed from the browser's name (unreliable, e.g. Zen reports
+   itself as plain Firefox). If the device/browser genuinely can't keep
+   backdrop-filter smooth, every .glass element quietly becomes a
+   faux-glass fallback instead. Chrome and stock Firefox never trigger this.
+===================================================================== */
+.low-power .glass {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  background: var(--faux-glass-bg) !important;
+  border: 1px solid var(--faux-glass-border);
+}
+.low-power .glass::before { display: none; }
+
+/* =====================================================================
    REDUCED MOTION — respected throughout
 ===================================================================== */
 @media (prefers-reduced-motion: reduce) {
