@@ -56,6 +56,35 @@
     };
   }
 
+  // manual escape hatch: if the automatic probe ever misses a genuinely
+  // struggling browser, one click fixes it permanently for that device
+  const perfToggle = document.getElementById('perfToggle');
+  function syncPerfToggleLabel() {
+    const isLow = document.documentElement.classList.contains('low-power');
+    perfToggle.textContent = isLow ? 'Leichter Modus (aktiv)' : 'Leichter Modus';
+    perfToggle.classList.toggle('active', isLow);
+  }
+  perfToggle.addEventListener('click', () => {
+    const isLow = document.documentElement.classList.toggle('low-power');
+    localStorage.setItem(LOW_POWER_KEY, isLow ? '1' : '0');
+    syncPerfToggleLabel();
+  });
+  syncPerfToggleLabel();
+
+  // global scroll-state flag: softens (never fully removes) the blur on every
+  // .glass element anywhere on the page while motion is happening, then restores
+  // it shortly after scrolling stops. Smooth CSS transition avoids any visible pop.
+  if (!reduceMotion) {
+    let scrollEndTimer = null;
+    window.addEventListener('scroll', () => {
+      document.documentElement.classList.add('is-scrolling');
+      clearTimeout(scrollEndTimer);
+      scrollEndTimer = setTimeout(() => {
+        document.documentElement.classList.remove('is-scrolling');
+      }, 180);
+    }, { passive: true });
+  }
+
   /* =====================================================================
      THEME TOGGLE — persists via localStorage, falls back to system preference
   ===================================================================== */

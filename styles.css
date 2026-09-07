@@ -118,11 +118,18 @@ a { color: inherit; }
   position: relative;
   isolation: isolate;
   background: var(--glass-bg);
-  backdrop-filter: blur(18px) saturate(170%);
-  -webkit-backdrop-filter: blur(18px) saturate(170%);
+  backdrop-filter: blur(var(--blur-amt, 16px)) saturate(170%);
+  -webkit-backdrop-filter: blur(var(--blur-amt, 16px)) saturate(170%);
   box-shadow: var(--glass-shadow);
   contain: layout style paint;
+  transition: backdrop-filter 0.25s ease, -webkit-backdrop-filter 0.25s ease;
+  will-change: backdrop-filter;
 }
+/* while the page is scrolling (anywhere, not just the pinned gallery), the blur
+   radius quietly drops — never to zero, so it still reads as glass, but a smaller
+   blur kernel is meaningfully cheaper to compute every frame. Transitions smoothly
+   both ways, so there's no visible "pop" like a hard on/off toggle would cause. */
+html.is-scrolling .glass { --blur-amt: 5px; }
 .glass::before {
   content: "";
   position: absolute; inset: 0; border-radius: inherit; z-index: 1;
@@ -309,6 +316,14 @@ a { color: inherit; }
   color: var(--text-primary); border-bottom: 1px solid var(--faux-glass-border); padding-bottom: 2px;
 }
 .closing-note { font-size: 0.72rem; color: var(--text-secondary); margin: 0; }
+.perf-toggle {
+  margin-top: 6px;
+  font-family: var(--font-body); font-size: 0.7rem; color: var(--text-secondary);
+  background: none; border: none; text-decoration: underline; cursor: pointer;
+  opacity: 0.6;
+}
+.perf-toggle:hover { opacity: 1; }
+.perf-toggle.active { color: var(--accent); opacity: 1; }
 
 /* =====================================================================
    LOW-POWER MODE
