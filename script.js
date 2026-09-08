@@ -1,201 +1,197 @@
 (() => {
-  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  "use strict";
 
-  /* =====================================================================
-     ADAPTIVE LOW-POWER MODE
-     Measures real frame timing instead of guessing from the browser name
-     (which doesn't work reliably anyway — Zen Browser, for example,
-     identifies itself as plain Firefox). Two passes:
-       1. A quick idle probe right at load, to catch browsers/devices that
-          are already struggling before any interaction happens.
-       2. Continuous monitoring while the pinned horizontal gallery is
-          engaged, since that's the heaviest moment on the page.
-     A confirmed "low power" verdict is remembered in localStorage, so a
-     returning visitor on the same device gets the lightweight version
-     immediately, without re-suffering through the laggy first attempt.
-  ===================================================================== */
-  const LOW_POWER_KEY = 'reblady-low-power';
+  const html = document.documentElement;
+  const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  function enableLowPower() {
-    document.documentElement.classList.add('low-power');
-    localStorage.setItem(LOW_POWER_KEY, '1');
+  /* ---------------- Icons ---------------- */
+  document.querySelectorAll("[data-icon]").forEach((el) => {
+    const name = el.getAttribute("data-icon");
+    el.innerHTML = `<svg viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-${name}"></use></svg>`;
+  });
+
+  /* ---------------- Theme ---------------- */
+  const THEME_KEY = "reblady-theme";
+  const themeToggles = [document.getElementById("themeToggle"), document.getElementById("themeToggleMini")];
+
+  function applyTheme(theme) {
+    document.body.setAttribute("data-theme", theme);
+    themeToggles.forEach((btn) => btn && btn.setAttribute("aria-pressed", theme === "light"));
   }
 
-  if (localStorage.getItem(LOW_POWER_KEY) === '1') {
-    document.documentElement.classList.add('low-power');
-  } else if (!reduceMotion) {
-    // idle probe: sample ~40 frames right after load
-    let frames = 0, badFrames = 0, last = performance.now();
-    function idleProbe(now) {
+  const storedTheme = localStorage.getItem(THEME_KEY);
+  if (storedTheme) {
+    applyTheme(storedTheme);
+  } else {
+    const systemPrefersLight = window.matchMedia("(prefers-color-scheme: light)").matches;
+    applyTheme(systemPrefersLight ? "light" : "dark");
+  }
+
+  function toggleTheme() {
+    const next = document.body.getAttribute("data-theme") === "dark" ? "light" : "dark";
+    applyTheme(next);
+    localStorage.setItem(THEME_KEY, next);
+  }
+  themeToggles.forEach((btn) => btn && btn.addEventListener("click", toggleTheme));
+
+  /* ---------------- Mini header on scroll ---------------- */
+  const hero = document.getElementById("hero");
+  const miniHeader = document.getElementById("miniHeader");
+  if (hero && miniHeader && "IntersectionObserver" in window) {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        miniHeader.classList.toggle("is-visible", !entry.isIntersecting);
+        miniHeader.setAttribute("aria-hidden", entry.isIntersecting ? "true" : "false");
+      },
+      { rootMargin: "-70% 0px 0px 0px" }
+    );
+    observer.observe(hero);
+  }
+
+  /* ---------------- Lite mode (backdrop-filter kill switch) ---------------- */
+  const LITE_KEY = "reblady-lite-mode";
+  const liteToggle = document.getElementById("liteModeToggle");
+
+  function setLiteMode(on, persist = true) {
+    html.classList.toggle("lite-mode", on);
+    if (persist) localStorage.setItem(LITE_KEY, on ? "1" : "0");
+  }
+  if (localStorage.getItem(LITE_KEY) === "1") setLiteMode(true, false);
+  if (liteToggle) {
+    liteToggle.addEventListener("click", () => {
+      setLiteMode(!html.classList.contains("lite-mode"));
+    });
+  }
+
+  /* ---------------- Adaptive low-power detection ----------------
+     Measures real frame times on load. If the device is visibly
+     struggling, permanently switch to lite mode (blur-free glass). */
+  const AUTO_LITE_KEY = "reblady-auto-lite-checked";
+  if (localStorage.getItem(AUTO_LITE_KEY) !== "1" && localStorage.getItem(LITE_KEY) !== "1") {
+    let frames = 0;
+    let badFrames = 0;
+    let last = performance.now();
+    const sampleWindow = 90; // ~1.5s at 60fps
+
+    function sample(now) {
       const delta = now - last;
       last = now;
       frames++;
-      if (delta > 32) badFrames++; // slower than ~30fps for this frame
-      if (frames < 40) {
-        requestAnimationFrame(idleProbe);
-      } else if (badFrames / frames > 0.35) {
-        enableLowPower();
+      if (delta > 26.5) badFrames++; // worse than ~38fps counts as a bad frame
+      if (frames < sampleWindow) {
+        requestAnimationFrame(sample);
+      } else {
+        localStorage.setItem(AUTO_LITE_KEY, "1");
+        if (badFrames / frames > 0.35) setLiteMode(true);
       }
     }
-    requestAnimationFrame(idleProbe);
-
-    // live probe: keep sampling specifically while the horizontal gallery is active,
-    // since that's the real stress test (scroll + fixed glass elements together)
-    let galleryFrames = 0, galleryBadFrames = 0, galleryLast = null;
-    window.__reportGalleryFrame = function (now, isActive) {
-      if (!isActive) { galleryLast = null; return; }
-      if (galleryLast !== null) {
-        const delta = now - galleryLast;
-        galleryFrames++;
-        if (delta > 32) galleryBadFrames++;
-        if (galleryFrames > 30 && galleryBadFrames / galleryFrames > 0.35) {
-          enableLowPower();
-        }
-      }
-      galleryLast = now;
-    };
+    requestAnimationFrame(sample);
   }
 
-  // manual escape hatch: if the automatic probe ever misses a genuinely
-  // struggling browser, one click fixes it permanently for that device
-  const perfToggle = document.getElementById('perfToggle');
-  function syncPerfToggleLabel() {
-    const isLow = document.documentElement.classList.contains('low-power');
-    perfToggle.textContent = isLow ? 'Leichter Modus (aktiv)' : 'Leichter Modus';
-    perfToggle.classList.toggle('active', isLow);
+  /* ---------------- is-scrolling: shrink blur while scrolling ---------------- */
+  let scrollTimer = null;
+  function onScrollActivity() {
+    html.classList.add("is-scrolling");
+    clearTimeout(scrollTimer);
+    scrollTimer = setTimeout(() => html.classList.remove("is-scrolling"), 220);
   }
-  perfToggle.addEventListener('click', () => {
-    const isLow = document.documentElement.classList.toggle('low-power');
-    localStorage.setItem(LOW_POWER_KEY, isLow ? '1' : '0');
-    syncPerfToggleLabel();
-  });
-  syncPerfToggleLabel();
+  window.addEventListener("scroll", onScrollActivity, { passive: true });
 
-  // global scroll-state flag: softens (never fully removes) the blur on every
-  // .glass element anywhere on the page while motion is happening, then restores
-  // it shortly after scrolling stops. Smooth CSS transition avoids any visible pop.
-  if (!reduceMotion) {
-    let scrollEndTimer = null;
-    window.addEventListener('scroll', () => {
-      document.documentElement.classList.add('is-scrolling');
-      clearTimeout(scrollEndTimer);
-      scrollEndTimer = setTimeout(() => {
-        document.documentElement.classList.remove('is-scrolling');
-      }, 180);
-    }, { passive: true });
-  }
+  /* ---------------- Pinned horizontal link gallery ---------------- */
+  const galleryPin = document.getElementById("galleryPin");
+  const galleryRow = document.getElementById("galleryRow");
 
-  /* =====================================================================
-     THEME TOGGLE — persists via localStorage, falls back to system preference
-  ===================================================================== */
-  const root = document.body;
-  const themeToggle = document.getElementById('themeToggle');
-  const THEME_KEY = 'reblady-theme';
-
-  function applyTheme(theme) {
-    root.setAttribute('data-theme', theme);
-    localStorage.setItem(THEME_KEY, theme);
-  }
-
-  const savedTheme = localStorage.getItem(THEME_KEY);
-  if (savedTheme) {
-    applyTheme(savedTheme);
-  } else {
-    const prefersLight = window.matchMedia('(prefers-color-scheme: light)').matches;
-    applyTheme(prefersLight ? 'light' : 'dark');
-  }
-
-  themeToggle.addEventListener('click', () => {
-    const current = root.getAttribute('data-theme');
-    applyTheme(current === 'dark' ? 'light' : 'dark');
-  });
-
-  /* =====================================================================
-     CONDENSED HEADER — fades in once the hero has scrolled mostly out of view
-     Single cheap IntersectionObserver, no scroll listener needed for this part.
-  ===================================================================== */
-  const hero = document.getElementById('hero');
-  const condensedHeader = document.getElementById('condensedHeader');
-  const bigName = document.getElementById('bigName');
-
-  new IntersectionObserver(([entry]) => {
-    const pastHero = !entry.isIntersecting;
-    condensedHeader.classList.toggle('visible', pastHero);
-    bigName.style.opacity = pastHero ? '0.35' : '1';
-  }, { threshold: 0.15 }).observe(hero);
-
-  /* =====================================================================
-     PINNED HORIZONTAL LINK GALLERY
-     Vertical scroll inside the tall wrapper is converted into horizontal
-     motion of the card row while it's pinned. Skipped entirely under
-     prefers-reduced-motion — the CSS fallback turns it into a plain,
-     natively scrollable row instead, so no JS positioning is needed there.
-  ===================================================================== */
-  const hOuter = document.getElementById('hOuter');
-  const hRow = document.getElementById('hRow');
-  const dockWrap = document.getElementById('dockWrap');
-
-  if (!reduceMotion) {
-    let hDistance = 0;
-
-    function measure() {
-      const rowWidth = hRow.scrollWidth;
-      hDistance = Math.max(0, rowWidth - window.innerWidth + 64);
-      hOuter.style.height = (window.innerHeight + hDistance) + 'px';
-    }
-    measure();
-    window.addEventListener('resize', measure);
-
+  if (galleryPin && galleryRow && !prefersReducedMotion) {
     let ticking = false;
-    function onScroll() {
-      if (ticking) return;
-      ticking = true;
-      requestAnimationFrame(() => {
-        const rect = hOuter.getBoundingClientRect();
-        const start = -rect.top;
-        const progress = Math.min(Math.max(start / (hDistance || 1), 0), 1);
-        hRow.style.transform = `translate3d(${-progress * hDistance}px,0,0)`;
 
-        const active = rect.top <= 0 && rect.bottom > window.innerHeight;
-        dockWrap.classList.toggle('hidden', active);
-        if (window.__reportGalleryFrame) window.__reportGalleryFrame(performance.now(), active);
+    function updateGallery() {
+      ticking = false;
+      const rect = galleryPin.getBoundingClientRect();
+      const total = galleryPin.offsetHeight - window.innerHeight;
+      if (total <= 0) return;
+      const progress = Math.min(1, Math.max(0, -rect.top / total));
+      const maxScroll = Math.max(0, galleryRow.scrollWidth - window.innerWidth);
+      galleryRow.style.transform = `translate3d(${-progress * maxScroll}px, 0, 0)`;
+    }
 
-        ticking = false;
+    function requestUpdate() {
+      if (!ticking) {
+        ticking = true;
+        requestAnimationFrame(updateGallery);
+      }
+    }
+
+    window.addEventListener("scroll", requestUpdate, { passive: true });
+    window.addEventListener("resize", requestUpdate);
+    requestUpdate();
+  }
+
+  /* ---------------- Aktuelles feed ---------------- */
+  const updatesList = document.getElementById("updatesList");
+  if (updatesList) {
+    fetch("/data/updates.json")
+      .then((res) => (res.ok ? res.json() : Promise.reject(res.status)))
+      .then((items) => {
+        if (!Array.isArray(items) || items.length === 0) {
+          updatesList.innerHTML = `<li class="updates__item updates__item--empty">Noch keine Updates.</li>`;
+          return;
+        }
+        const formatter = new Intl.DateTimeFormat("de-DE", { day: "2-digit", month: "short" });
+        updatesList.innerHTML = items
+          .sort((a, b) => new Date(b.date) - new Date(a.date))
+          .map((item) => {
+            const d = new Date(item.date);
+            const label = isNaN(d) ? "" : formatter.format(d);
+            return `<li class="updates__item"><time datetime="${item.date}">${label}</time><span>${item.text}</span></li>`;
+          })
+          .join("");
+      })
+      .catch(() => {
+        updatesList.innerHTML = `<li class="updates__item updates__item--empty">Updates konnten nicht geladen werden.</li>`;
       });
-    }
-    window.addEventListener('scroll', onScroll, { passive: true });
-    onScroll();
   }
 
-  /* =====================================================================
-     LANYARD — live Discord presence for the status dot
-     Replace DISCORD_USER_ID below with your actual Discord user ID
-     (Discord Settings → Advanced → Developer Mode, then right-click your
-     name → "Copy User ID"). You must also be a member of the Lanyard
-     Discord server for this to work: https://discord.gg/lanyard
-  ===================================================================== */
-  const DISCORD_USER_ID = 'DISCORD_USER_ID'; // <-- replace this
-  const statusDot = document.getElementById('statusDot');
-  const statusText = document.getElementById('statusText');
+  /* ---------------- Discord live presence (Lanyard) ----------------
+     TODO: replace with the real Discord user ID once available.
+     Requires membership in the Lanyard Discord server to work. */
+  const DISCORD_USER_ID = "REPLACE_WITH_DISCORD_USER_ID";
+  const statusBox = document.getElementById("discordStatus");
+  const statusDot = document.getElementById("discordStatusDot");
+  const statusText = document.getElementById("discordStatusText");
 
-  async function updateDiscordStatus() {
-    if (DISCORD_USER_ID === 'DISCORD_USER_ID') return; // not configured yet
-    try {
-      const res = await fetch(`https://api.lanyard.rest/v1/users/${DISCORD_USER_ID}`);
-      const json = await res.json();
-      if (!json.success) return;
+  const STATUS_LABELS = {
+    online: "Online",
+    idle: "Abwesend",
+    dnd: "Nicht stören",
+    offline: "Offline",
+  };
 
-      const status = json.data.discord_status; // "online" | "idle" | "dnd" | "offline"
-      statusDot.className = 'dot ' + (status === 'offline' ? '' : status);
-
-      const labels = { online: 'Online', idle: 'Abwesend', dnd: 'Nicht stören', offline: 'Offline' };
-      statusText.textContent = labels[status] || 'Discord';
-    } catch (err) {
-      // fails silently — the dot just stays in its default (offline) state
-      console.warn('Lanyard status could not be loaded:', err);
-    }
+  if (statusBox && DISCORD_USER_ID && DISCORD_USER_ID !== "REPLACE_WITH_DISCORD_USER_ID") {
+    fetch(`https://api.lanyard.rest/v1/users/${DISCORD_USER_ID}`)
+      .then((res) => (res.ok ? res.json() : Promise.reject(res.status)))
+      .then((json) => {
+        const data = json && json.data;
+        if (!data) return;
+        const state = data.discord_status || "offline";
+        statusDot.setAttribute("data-state", state);
+        const spotify = data.listening_to_spotify && data.spotify;
+        statusText.textContent = spotify
+          ? `Hört gerade ${spotify.song} — ${spotify.artist}`
+          : STATUS_LABELS[state] || "Offline";
+        statusBox.hidden = false;
+      })
+      .catch(() => {
+        /* silently hide on failure — this is a nice-to-have, not critical */
+      });
   }
 
-  updateDiscordStatus();
-  setInterval(updateDiscordStatus, 60000); // refresh every minute, no need for anything faster
+  /* ---------------- Discord invite placeholder ----------------
+     TODO: replace "#" with the real, non-expiring invite link. */
+  const DISCORD_INVITE = null; // e.g. "https://discord.gg/xxxxxxx"
+  if (DISCORD_INVITE) {
+    ["discordInviteLink", "discordInviteDock"].forEach((id) => {
+      const el = document.getElementById(id);
+      if (el) el.href = DISCORD_INVITE;
+    });
+  }
 })();

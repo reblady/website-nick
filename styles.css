@@ -1,365 +1,480 @@
-/* =====================================================================
-   THEME TOKENS
-   Dark = "Obsidian Gold" (default), Light = "Warm Cloud"
-   Everything below is built on these variables — never hardcode a color
-   outside of this block.
-===================================================================== */
-:root,
-[data-theme="dark"] {
-  --bg-grad: linear-gradient(180deg,
-    #EAE7DF 0%, #E8C89B 14%, #DE9757 26%, #C15A31 40%,
-    #79281B 56%, #2A0F0B 74%, #140807 88%, #0B0403 100%);
-  --text-primary: #FBF2E4;
-  --text-secondary: rgba(251, 242, 228, 0.6);
-  --accent: #FFC98A;
-  --status-online: #5BE39A;
-  --status-idle: #F5C451;
-  --status-dnd: #F2555A;
-  --status-offline: #8a8a8a;
+/* ============================================================
+   reblady.de — poster-style link page
+   Themes: "Obsidian Gold" (dark, default) / "Warm Cloud" (light)
+   ============================================================ */
 
-  --glass-bg: rgba(255, 255, 255, 0.09);
-  --glass-rim: conic-gradient(from 210deg at 50% 50%,
-    rgba(255, 205, 235, 0.7), rgba(190, 225, 255, 0.55),
-    rgba(255, 235, 190, 0.65), rgba(255, 205, 235, 0.7));
-  --glass-shadow:
-    inset 0 1.5px 0 rgba(255, 255, 255, 0.5),
-    inset 0 -8px 14px rgba(0, 0, 0, 0.2),
-    0 14px 34px rgba(0, 0, 0, 0.38);
-  --faux-glass-bg: linear-gradient(160deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.03));
-  --faux-glass-border: rgba(255, 255, 255, 0.16);
-  --faux-glass-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 10px 26px rgba(0, 0, 0, 0.35);
-
-  --hero-text-shadow: 0 4px 30px rgba(0, 0, 0, 0.4);
-  --avatar-grad: linear-gradient(145deg, #5a3b26, #2a1c14);
-  --hover-fill: linear-gradient(135deg, rgba(255, 201, 138, 0.2), rgba(255, 201, 138, 0.05));
-  --hover-rim: rgba(255, 201, 138, 0.45);
-  --hover-glow: rgba(255, 180, 110, 0.28);
-  --thumb-grad: linear-gradient(140deg, rgba(255, 201, 138, 0.35), rgba(255, 201, 138, 0.05));
-  --thumb-grad-primary: linear-gradient(140deg, rgba(255, 201, 138, 0.55), rgba(255, 201, 138, 0.1));
-}
-
-[data-theme="light"] {
-  --bg-grad: linear-gradient(180deg,
-    #F4F2EC 0%, #F2E2C4 22%, #F0C69A 42%, #E8A06C 60%,
-    #DC7C50 78%, #C85F3E 92%, #B04B33 100%);
-  --text-primary: #3A2416;
-  --text-secondary: rgba(58, 36, 22, 0.58);
-  --accent: #C2540E;
-  --status-online: #1E9E5A;
-  --status-idle: #C98A1E;
-  --status-dnd: #C2401E;
-  --status-offline: #9a9a9a;
-
-  --glass-bg: rgba(255, 255, 255, 0.38);
-  --glass-rim: conic-gradient(from 210deg at 50% 50%,
-    rgba(255, 255, 255, 0.95), rgba(255, 200, 150, 0.55),
-    rgba(255, 255, 255, 0.85), rgba(200, 220, 255, 0.4), rgba(255, 255, 255, 0.95));
-  --glass-shadow:
-    inset 0 1.5px 0 rgba(255, 255, 255, 0.9),
-    inset 0 -8px 14px rgba(150, 60, 30, 0.1),
-    0 14px 34px rgba(120, 50, 20, 0.2);
-  --faux-glass-bg: linear-gradient(160deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.2));
-  --faux-glass-border: rgba(58, 36, 22, 0.14);
-  --faux-glass-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), 0 10px 26px rgba(150, 60, 30, 0.14);
-
-  --hero-text-shadow: 0 4px 24px rgba(255, 255, 255, 0.4);
-  --avatar-grad: linear-gradient(145deg, #FFD5A9, #E8A96A);
-  --hover-fill: linear-gradient(135deg, rgba(194, 84, 14, 0.16), rgba(194, 84, 14, 0.04));
-  --hover-rim: rgba(194, 84, 14, 0.35);
-  --hover-glow: rgba(194, 84, 14, 0.2);
-  --thumb-grad: linear-gradient(140deg, rgba(194, 84, 14, 0.22), rgba(194, 84, 14, 0.04));
-  --thumb-grad-primary: linear-gradient(140deg, rgba(194, 84, 14, 0.32), rgba(194, 84, 14, 0.08));
-}
-
-/* shared layout tokens */
-:root {
-  --dock-pad: 7px;
-  --btn-h: 44px;
-  --r-inner: 22px;                    /* pill radius = height / 2, always clean */
-  --r-outer: calc(22px + 7px);        /* outer = inner + padding, so curves share one center */
-  --font-display: 'Fraunces', serif;
-  --font-body: 'Manrope', sans-serif;
-}
-
-/* =====================================================================
-   RESET & BASE
-===================================================================== */
 *, *::before, *::after { box-sizing: border-box; }
-html, body { margin: 0; }
+html, body { margin: 0; padding: 0; }
+
+:root {
+  --font-display: "Fraunces", Georgia, serif;
+  --font-ui: "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-fast: 180ms;
+  --dur-med: 420ms;
+  --dur-slow: 900ms;
+
+  /* dock: inner radius + padding = outer radius (concentric rule) */
+  --dock-pad: 7px;
+  --dock-inner-radius: 22px;
+  --dock-outer-radius: calc(var(--dock-inner-radius) + var(--dock-pad));
+
+  /* blur amount is animated down while the page is actively scrolling */
+  --glass-blur: 16px;
+}
+
+/* ---------- Theme: Obsidian Gold (dark) ---------- */
+[data-theme="dark"] {
+  --bg-0: #0c0a08;
+  --bg-1: #1b160f;
+  --bg-2: #2a2117;
+  --fg-0: #f4ecdb;
+  --fg-1: #cabfa9;
+  --fg-2: #8d8272;
+  --accent: #d9a34a;
+  --accent-soft: rgba(217, 163, 74, 0.16);
+  --glass-bg: rgba(30, 26, 20, 0.55);
+  --glass-rim-1: rgba(217, 163, 74, 0.55);
+  --glass-rim-2: rgba(255, 255, 255, 0.12);
+  --glass-hotspot: rgba(255, 246, 224, 0.35);
+  --glass-shadow-top: rgba(255, 232, 180, 0.14);
+  --glass-shadow-bottom: rgba(0, 0, 0, 0.55);
+  --page-gradient: radial-gradient(120% 90% at 50% -10%, #241c12 0%, #0c0a08 55%, #050403 100%);
+}
+
+/* ---------- Theme: Warm Cloud (light) ---------- */
+[data-theme="light"] {
+  --bg-0: #f7efe2;
+  --bg-1: #f1e2cd;
+  --bg-2: #e9d2b5;
+  --fg-0: #2c2116;
+  --fg-1: #5a4a38;
+  --fg-2: #8a7a64;
+  --accent: #c1633e;
+  --accent-soft: rgba(193, 99, 62, 0.14);
+  --glass-bg: rgba(255, 250, 242, 0.55);
+  --glass-rim-1: rgba(193, 99, 62, 0.4);
+  --glass-rim-2: rgba(255, 255, 255, 0.6);
+  --glass-hotspot: rgba(255, 255, 255, 0.65);
+  --glass-shadow-top: rgba(255, 255, 255, 0.7);
+  --glass-shadow-bottom: rgba(120, 80, 40, 0.18);
+  --page-gradient: radial-gradient(120% 90% at 50% -10%, #fbf1e0 0%, #f7efe2 55%, #efdcc0 100%);
+}
+
 body {
-  background-color: #140807;
-  background-image:
-    var(--bg-grad),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.4'/%3E%3C/svg%3E");
-  background-blend-mode: normal, overlay;
-  font-family: var(--font-body);
-  color: var(--text-primary);
-  transition: color 0.3s ease;
+  background: var(--bg-0);
+  color: var(--fg-0);
+  font-family: var(--font-ui);
+  min-height: 100vh;
+  overflow-x: hidden;
+  transition: background var(--dur-med) var(--ease-out), color var(--dur-med) var(--ease-out);
 }
 
-a { color: inherit; }
-:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 3px;
-  border-radius: 4px;
+a { color: inherit; text-decoration: none; }
+ul { list-style: none; margin: 0; padding: 0; }
+
+/* ============ Ambient background ============ */
+.ambient {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: var(--page-gradient);
+  overflow: hidden;
+}
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(70px);
+  opacity: 0.5;
+  will-change: transform;
+}
+.orb--a {
+  width: 46vmax; height: 46vmax;
+  top: -14vmax; left: -10vmax;
+  background: radial-gradient(circle at 35% 35%, var(--accent-soft), transparent 70%);
+  animation: drift-a 46s ease-in-out infinite;
+}
+.orb--b {
+  width: 38vmax; height: 38vmax;
+  bottom: -12vmax; right: -8vmax;
+  background: radial-gradient(circle at 60% 60%, var(--accent-soft), transparent 70%);
+  animation: drift-b 54s ease-in-out infinite;
+}
+@keyframes drift-a {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(6vmax, 4vmax); }
+}
+@keyframes drift-b {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(-5vmax, -6vmax); }
+}
+.grain {
+  position: absolute; inset: 0;
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
 }
 
-/* =====================================================================
-   GLASS SYSTEM
-   .glass  = real backdrop-filter, reserved for STATIC elements only
-             (dock, condensed header). Never apply to anything that moves —
-             backdrop-filter cost comes from the changing content behind it,
-             and a scrolling page changes constantly underneath fixed glass too,
-             so keep the total number of simultaneous instances low.
-   .faux-glass = translucent + border + highlight, no blur. Used for the
-             sliding link cards, which move continuously during interaction.
-===================================================================== */
-.glass {
-  position: relative;
-  isolation: isolate;
+/* ============ Glass system ============ */
+/* Static glass: used only on elements that do not move (dock, mini-header).
+   Blur is expensive, so it lives only here — and is throttled during scroll. */
+.glass-static {
   background: var(--glass-bg);
-  backdrop-filter: blur(var(--blur-amt, 16px)) saturate(170%);
-  -webkit-backdrop-filter: blur(var(--blur-amt, 16px)) saturate(170%);
-  box-shadow: var(--glass-shadow);
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid transparent;
+  border-image: linear-gradient(135deg, var(--glass-rim-1), var(--glass-rim-2) 40%, transparent 70%) 1;
+  box-shadow:
+    inset 0 1px 0 var(--glass-shadow-top),
+    inset 0 -6px 12px -8px var(--glass-shadow-bottom),
+    0 12px 30px -12px rgba(0, 0, 0, 0.4);
   contain: layout style paint;
-  transition: backdrop-filter 0.25s ease, -webkit-backdrop-filter 0.25s ease;
-  will-change: backdrop-filter;
-}
-/* while the page is scrolling (anywhere, not just the pinned gallery), the blur
-   radius quietly drops — never to zero, so it still reads as glass, but a smaller
-   blur kernel is meaningfully cheaper to compute every frame. Transitions smoothly
-   both ways, so there's no visible "pop" like a hard on/off toggle would cause. */
-html.is-scrolling .glass { --blur-amt: 5px; }
-.glass::before {
-  content: "";
-  position: absolute; inset: 0; border-radius: inherit; z-index: 1;
-  padding: 1.25px;
-  background: var(--glass-rim);
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  pointer-events: none;
+  transition: background var(--dur-med) var(--ease-out), box-shadow var(--dur-med) var(--ease-out);
 }
 
-.faux-glass {
-  background: var(--faux-glass-bg);
-  border: 1px solid var(--faux-glass-border);
-  box-shadow: var(--faux-glass-shadow);
+/* Faux glass: used on elements that move (link cards). No blur, ever. */
+.glass-faux {
+  background: linear-gradient(160deg, var(--glass-bg), transparent 120%);
+  border: 1px solid var(--glass-rim-2);
+  box-shadow:
+    inset 0 1px 0 var(--glass-shadow-top),
+    0 10px 24px -14px rgba(0, 0, 0, 0.35);
+  contain: layout style paint;
 }
 
-/* =====================================================================
-   THEME TOGGLE
-===================================================================== */
+/* While the user is actively scrolling, shrink the blur radius to cut cost,
+   then relax back once scrolling stops. Transition is soft, no flicker. */
+html.is-scrolling { --glass-blur: 5px; }
+
+/* Lite mode: backdrop-filter fully disabled — manual toggle or auto-detected. */
+html.lite-mode .glass-static {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  background: var(--bg-1);
+}
+
+/* ============ Mini header (condensed, appears on scroll) ============ */
+.mini-header {
+  position: fixed;
+  top: 14px; left: 50%;
+  transform: translate(-50%, -140%);
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 18px;
+  border-radius: var(--dock-outer-radius);
+  font-family: var(--font-ui);
+  opacity: 0;
+  transition: transform var(--dur-med) var(--ease-out), opacity var(--dur-med) var(--ease-out);
+}
+.mini-header.is-visible {
+  transform: translate(-50%, 0);
+  opacity: 1;
+}
+.mini-header__name {
+  font-weight: 700;
+  font-size: 0.95rem;
+  letter-spacing: 0.01em;
+}
+.mini-header__handle {
+  color: var(--fg-2);
+  font-size: 0.85rem;
+}
+
+/* ============ Theme toggle ============ */
 .theme-toggle {
-  position: fixed; top: 18px; right: 18px; z-index: 10;
-  width: 40px; height: 40px; border-radius: 50%;
-  border: 1px solid var(--faux-glass-border);
-  background: var(--faux-glass-bg);
-  color: var(--text-primary);
-  display: flex; align-items: center; justify-content: center;
+  appearance: none;
+  border: 1px solid var(--glass-rim-2);
+  background: var(--glass-bg);
+  width: 40px; height: 24px;
+  border-radius: 999px;
+  padding: 3px;
   cursor: pointer;
-  transition: transform 0.2s ease, background 0.2s ease;
+  display: inline-flex;
+  align-items: center;
 }
-.theme-toggle:hover { transform: scale(1.06); }
-.icon-sun, .icon-moon { position: absolute; transition: opacity 0.2s ease, transform 0.3s ease; }
-[data-theme="dark"] .icon-sun { opacity: 0; transform: rotate(-40deg); }
-[data-theme="dark"] .icon-moon { opacity: 1; transform: rotate(0); }
-[data-theme="light"] .icon-sun { opacity: 1; transform: rotate(0); }
-[data-theme="light"] .icon-moon { opacity: 0; transform: rotate(40deg); }
+.theme-toggle__dot {
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: var(--accent);
+  transform: translateX(0);
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+[data-theme="light"] .theme-toggle__dot { transform: translateX(16px); }
+.theme-toggle--hero {
+  position: absolute;
+  top: 28px; right: 28px;
+  z-index: 5;
+}
+.theme-toggle--mini { margin-left: 4px; }
 
-/* =====================================================================
-   HERO / COVER
-===================================================================== */
+/* ============ Hero / poster ============ */
 .hero {
-  height: 100vh;
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  text-align: center;
-  padding: 0 24px;
   position: relative;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 24px;
 }
-.hero-inner { animation: rise 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
-@keyframes rise {
-  from { opacity: 0; transform: translateY(18px); }
+.hero__inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+.hero__eyebrow {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-weight: 600;
+  color: var(--accent);
+  font-size: 0.95rem;
+}
+.hero__name {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(3.2rem, 13vw, 8.5rem);
+  line-height: 0.92;
+  letter-spacing: -0.01em;
+}
+.hero__name-line { display: block; }
+.hero__motto {
+  margin: 0;
+  max-width: 34ch;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: clamp(1.05rem, 2.4vw, 1.4rem);
+  color: var(--fg-1);
+}
+.hero__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  color: var(--fg-1);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-rim-2);
+}
+.hero__status-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--fg-2);
+}
+.hero__status-dot[data-state="online"] { background: #57c26a; }
+.hero__status-dot[data-state="idle"] { background: #e0a63a; }
+.hero__status-dot[data-state="dnd"] { background: #e0553a; }
+
+.hero__scroll-cue {
+  position: absolute;
+  bottom: 34px; left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  color: var(--fg-2);
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+}
+.hero__scroll-line {
+  width: 1px; height: 34px;
+  background: linear-gradient(var(--fg-2), transparent);
+  animation: scroll-cue 2.2s ease-in-out infinite;
+}
+@keyframes scroll-cue {
+  0% { opacity: 0.2; transform: scaleY(0.4); transform-origin: top; }
+  50% { opacity: 1; transform: scaleY(1); transform-origin: top; }
+  100% { opacity: 0.2; transform: scaleY(0.4); transform-origin: top; }
+}
+
+/* ---- page-load sequence (one orchestrated moment, not per-section) ---- */
+.load-in {
+  opacity: 0;
+  transform: translateY(14px);
+  animation: load-in var(--dur-slow) var(--ease-out) forwards;
+}
+.load-in--1 { animation-delay: 0.05s; }
+.load-in--2 { animation-delay: 0.16s; }
+.load-in--3 { animation-delay: 0.32s; }
+.load-in--4 { animation-delay: 0.46s; }
+.load-in--5 { animation-delay: 0.6s; }
+@keyframes load-in {
   to { opacity: 1; transform: translateY(0); }
 }
 
-#bigName {
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: clamp(3rem, 16vw, 5rem);
-  line-height: 0.9;
-  letter-spacing: -0.02em;
-  margin: 0;
-  color: var(--text-primary);
-  text-shadow: var(--hero-text-shadow);
-  transition: opacity 0.3s ease, color 0.3s ease;
+/* ============ Pinned horizontal link gallery ============ */
+.gallery-pin {
+  position: relative;
+  height: 320vh; /* scroll distance that drives the horizontal motion */
 }
-.rule {
-  width: 64px; height: 1px; margin: 22px auto;
-  background: linear-gradient(90deg, transparent, var(--accent), transparent);
-  opacity: 0.8;
+.gallery-pin__track {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
 }
-.motto {
+.gallery-pin__row {
+  display: flex;
+  gap: 22px;
+  padding: 0 8vw;
+  will-change: transform;
+}
+
+.link-card {
+  flex: 0 0 auto;
+  width: min(78vw, 360px);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 22px;
+  border-radius: 24px;
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+.link-card:hover,
+.link-card:focus-visible {
+  transform: scale(1.04);
+}
+.link-card--featured {
+  width: min(82vw, 400px);
+  border-color: var(--accent);
+  background: linear-gradient(160deg, var(--accent-soft), transparent 120%);
+}
+.link-card__icon {
+  flex: 0 0 auto;
+  width: 44px; height: 44px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 50%;
+  background: var(--bg-1);
+  color: var(--accent);
+}
+.link-card__icon svg { width: 22px; height: 22px; }
+.link-card__body { display: flex; flex-direction: column; gap: 2px; text-align: left; }
+.link-card__title { font-weight: 700; font-size: 1.05rem; }
+.link-card__desc { color: var(--fg-2); font-size: 0.85rem; }
+
+/* Reduced motion: pinned gallery becomes a plain scrollable row */
+@media (prefers-reduced-motion: reduce) {
+  .gallery-pin { height: auto; }
+  .gallery-pin__track {
+    position: static;
+    height: auto;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    padding: 60px 0;
+  }
+  .gallery-pin__row { transform: none !important; }
+  .link-card { scroll-snap-align: start; }
+}
+
+/* ============ Aktuelles ============ */
+.updates {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 40px 24px 140px;
+}
+.updates__heading {
   font-family: var(--font-display);
   font-style: italic;
-  font-weight: 300;
-  font-size: 1.28rem;
-  color: var(--text-primary);
-  max-width: 320px;
-  line-height: 1.5;
-  margin: 0 auto;
+  font-weight: 500;
+  font-size: 1.6rem;
+  margin: 0 0 20px;
 }
+.updates__item {
+  display: flex;
+  gap: 16px;
+  padding: 16px 0;
+  border-top: 1px solid var(--glass-rim-2);
+  font-size: 0.95rem;
+  color: var(--fg-1);
+}
+.updates__item:first-child { border-top: none; }
+.updates__item time {
+  flex: 0 0 auto;
+  color: var(--fg-2);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  padding-top: 2px;
+}
+.updates__item--loading, .updates__item--empty { color: var(--fg-2); font-style: italic; }
 
-.handle-row {
-  display: flex; align-items: center; justify-content: center; gap: 12px;
-  margin-top: 30px;
-  flex-wrap: wrap;
+/* ============ Floating dock ============ */
+.dock {
+  position: fixed;
+  bottom: 20px; left: 50%;
+  transform: translateX(-50%);
+  z-index: 40;
+  display: flex;
+  gap: 6px;
+  padding: var(--dock-pad);
+  border-radius: var(--dock-outer-radius);
 }
-.handle { font-size: 0.85rem; color: var(--text-secondary); letter-spacing: 0.02em; }
-.status-chip {
-  display: inline-flex; align-items: center; gap: 6px;
-  font-size: 0.76rem; color: var(--text-secondary);
-  padding: 4px 10px; border-radius: 999px;
-  border: 1px solid var(--faux-glass-border);
-  background: var(--faux-glass-bg);
+.dock__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: var(--dock-inner-radius);
+  color: var(--fg-1);
+  transition: transform var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
 }
-.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--status-offline); transition: background 0.3s ease; }
-.dot.online { background: var(--status-online); box-shadow: 0 0 8px var(--status-online); }
-.dot.idle { background: var(--status-idle); box-shadow: 0 0 8px var(--status-idle); }
-.dot.dnd { background: var(--status-dnd); box-shadow: 0 0 8px var(--status-dnd); }
-
-.scroll-hint {
-  position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
-  font-size: 0.7rem; color: var(--text-secondary);
-  display: flex; flex-direction: column; align-items: center; gap: 6px;
-  animation: bob 2.2s ease-in-out infinite;
-}
-.scroll-hint .line { width: 1px; height: 26px; background: linear-gradient(180deg, var(--accent), transparent); opacity: 0.7; }
-@keyframes bob {
-  0%, 100% { transform: translate(-50%, 0); }
-  50% { transform: translate(-50%, 6px); }
-}
-
-/* =====================================================================
-   CONDENSED HEADER
-===================================================================== */
-.condensed-header {
-  position: fixed; top: 0; left: 0; right: 0; z-index: 5;
-  display: flex; justify-content: center; padding-top: 16px;
-  opacity: 0; transform: translateY(-8px); pointer-events: none;
-  transition: opacity 0.3s ease, transform 0.3s ease;
-}
-.condensed-header.visible { opacity: 1; transform: translateY(0); pointer-events: auto; }
-.condensed-pill { display: flex; align-items: center; gap: 10px; padding: 8px 18px 8px 10px; border-radius: 999px; }
-.mini-avatar { width: 26px; height: 26px; border-radius: 50%; background: var(--avatar-grad); }
-.condensed-pill .n { font-family: var(--font-display); font-weight: 600; font-size: 0.92rem; }
-.condensed-pill .h { font-size: 0.72rem; color: var(--text-secondary); }
-
-/* =====================================================================
-   QUICK DOCK
-===================================================================== */
-.dock-wrap {
-  position: fixed; left: 0; right: 0; bottom: 22px; z-index: 6;
-  display: flex; justify-content: center; padding: 0 20px;
-  opacity: 1; transition: opacity 0.3s ease;
-}
-.dock-wrap.hidden { opacity: 0; pointer-events: none; }
-.dock { display: flex; align-items: center; gap: 6px; padding: var(--dock-pad); border-radius: var(--r-outer); }
-.dock a {
-  text-decoration: none; color: var(--text-primary);
-  display: flex; align-items: center; gap: 8px; height: var(--btn-h);
-  border-radius: var(--r-inner); transform-origin: center;
-  transition: background 0.25s ease, box-shadow 0.25s ease, transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-.dock a:hover {
-  background: var(--hover-fill);
-  box-shadow: inset 0 0 0 1px var(--hover-rim), inset 0 1px 0 rgba(255, 255, 255, 0.4), 0 0 18px var(--hover-glow);
+.dock__item:hover, .dock__item:focus-visible {
   transform: scale(1.06);
+  background: var(--accent-soft);
+  color: var(--accent);
 }
-.dock .icon-btn { width: var(--btn-h); justify-content: center; font-size: 0.72rem; font-weight: 700; color: var(--text-secondary); }
-.dock .icon-btn:hover { color: var(--text-primary); }
-.dock .primary { padding: 0 18px 0 16px; background: var(--hover-fill); }
-.dock .primary span.t { font-weight: 700; font-size: 0.86rem; }
-.dock .sep { width: 1px; height: 22px; background: var(--faux-glass-border); margin: 0 2px; }
+.dock__icon { width: 20px; height: 20px; display: flex; }
+.dock__icon svg { width: 100%; height: 100%; }
+.dock__label { font-size: 0.82rem; font-weight: 600; white-space: nowrap; }
 
-/* =====================================================================
-   PINNED HORIZONTAL LINK GALLERY
-   Falls back to a plain, native horizontally-scrollable row (no JS pin,
-   no forced motion) whenever prefers-reduced-motion is set — see the
-   media query at the bottom, and the check in script.js.
-===================================================================== */
-.h-outer { position: relative; contain: layout paint; }
-.h-sticky { position: sticky; top: 0; height: 100vh; overflow: hidden; display: flex; align-items: center; contain: layout paint; }
-.h-intro { position: absolute; top: 14%; left: 0; right: 0; text-align: center; z-index: 2; pointer-events: none; }
-.h-intro .label { font-size: 0.72rem; letter-spacing: 0.08em; color: var(--text-secondary); }
-.h-intro h2 { font-family: var(--font-display); font-weight: 600; font-size: 1.6rem; margin: 6px 0 0; color: var(--text-primary); }
-.h-row { display: flex; gap: 22px; padding: 0 8vw; will-change: transform; transform: translateZ(0); contain: layout style; }
-.card {
-  flex: 0 0 auto; width: min(72vw, 260px); border-radius: 26px; padding: 16px;
-  display: flex; flex-direction: column; gap: 14px;
-  text-decoration: none; color: var(--text-primary);
+@media (max-width: 560px) {
+  .dock { max-width: calc(100vw - 24px); overflow-x: auto; }
+  .dock__label { display: none; }
+  .dock__item { padding: 10px; }
 }
-.card .thumb { height: 150px; border-radius: 16px; background: var(--thumb-grad); }
-.card.primary-card .thumb { background: var(--thumb-grad-primary); }
-.card .name { font-weight: 700; font-size: 1rem; }
-.card .desc { font-size: 0.78rem; color: var(--text-secondary); }
 
-/* =====================================================================
-   CLOSING
-===================================================================== */
-.closing {
-  min-height: 40vh; display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 14px; text-align: center; padding: 60px 24px;
+/* ============ Footer ============ */
+.site-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 0 24px 120px;
+  font-size: 0.78rem;
+  color: var(--fg-2);
 }
-.closing-link {
-  font-family: var(--font-display); font-size: 1.1rem; text-decoration: none;
-  color: var(--text-primary); border-bottom: 1px solid var(--faux-glass-border); padding-bottom: 2px;
+.site-footer__lite {
+  appearance: none;
+  background: none;
+  border: 1px solid var(--glass-rim-2);
+  color: var(--fg-2);
+  padding: 6px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-size: 0.75rem;
+  transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
 }
-.closing-note { font-size: 0.72rem; color: var(--text-secondary); margin: 0; }
-.perf-toggle {
-  margin-top: 6px;
-  font-family: var(--font-body); font-size: 0.7rem; color: var(--text-secondary);
-  background: none; border: none; text-decoration: underline; cursor: pointer;
-  opacity: 0.6;
-}
-.perf-toggle:hover { opacity: 1; }
-.perf-toggle.active { color: var(--accent); opacity: 1; }
+.site-footer__lite:hover { color: var(--accent); border-color: var(--accent); }
+html.lite-mode .site-footer__lite { color: var(--accent); border-color: var(--accent); }
 
-/* =====================================================================
-   LOW-POWER MODE
-   Set automatically by script.js after measuring real frame timing —
-   never guessed from the browser's name (unreliable, e.g. Zen reports
-   itself as plain Firefox). If the device/browser genuinely can't keep
-   backdrop-filter smooth, every .glass element quietly becomes a
-   faux-glass fallback instead. Chrome and stock Firefox never trigger this.
-===================================================================== */
-.low-power .glass {
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-  background: var(--faux-glass-bg) !important;
-  border: 1px solid var(--faux-glass-border);
+/* ============ Accessibility ============ */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
 }
-.low-power .glass::before { display: none; }
 
-/* =====================================================================
-   REDUCED MOTION — respected throughout
-===================================================================== */
 @media (prefers-reduced-motion: reduce) {
-  .hero-inner, .scroll-hint { animation: none; }
-  .condensed-header, .dock-wrap, #bigName, .dock a { transition: none; }
-  .dock a:hover { transform: none; }
-
-  /* the pinned/scroll-jacked gallery becomes a plain, native horizontal scroller —
-     script.js also skips the pin/translate logic entirely in this mode */
-  .h-outer { height: auto !important; }
-  .h-sticky { position: relative; height: auto; overflow-x: auto; padding: 60px 0; }
-  .h-row { transform: none !important; }
-}
-
-/* =====================================================================
-   RESPONSIVE
-===================================================================== */
-@media (max-width: 420px) {
-  .dock .primary span.t { font-size: 0.8rem; }
-  .card { width: 78vw; }
+  .load-in { opacity: 1; transform: none; animation: none; }
+  .orb, .hero__scroll-line { animation: none; }
 }
