@@ -129,7 +129,7 @@
   /* ---------------- Aktuelles feed ---------------- */
   const updatesList = document.getElementById("updatesList");
   if (updatesList) {
-    fetch("/data/updates.json")
+    fetch("data/updates.json")
       .then((res) => (res.ok ? res.json() : Promise.reject(res.status)))
       .then((items) => {
         if (!Array.isArray(items) || items.length === 0) {

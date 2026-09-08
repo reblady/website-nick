@@ -93,21 +93,21 @@ ul { list-style: none; margin: 0; padding: 0; }
   width: 46vmax; height: 46vmax;
   top: -14vmax; left: -10vmax;
   background: radial-gradient(circle at 35% 35%, var(--accent-soft), transparent 70%);
-  animation: drift-a 46s ease-in-out infinite;
+  animation: drift-a 34s ease-in-out infinite;
 }
 .orb--b {
   width: 38vmax; height: 38vmax;
   bottom: -12vmax; right: -8vmax;
   background: radial-gradient(circle at 60% 60%, var(--accent-soft), transparent 70%);
-  animation: drift-b 54s ease-in-out infinite;
+  animation: drift-b 40s ease-in-out infinite;
 }
 @keyframes drift-a {
-  0%, 100% { transform: translate(0, 0); }
-  50% { transform: translate(6vmax, 4vmax); }
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(10vmax, 7vmax) scale(1.12); }
 }
 @keyframes drift-b {
-  0%, 100% { transform: translate(0, 0); }
-  50% { transform: translate(-5vmax, -6vmax); }
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-9vmax, -10vmax) scale(1.15); }
 }
 .grain {
   position: absolute; inset: 0;
@@ -298,16 +298,33 @@ html.lite-mode .glass-static {
 /* ---- page-load sequence (one orchestrated moment, not per-section) ---- */
 .load-in {
   opacity: 0;
-  transform: translateY(14px);
-  animation: load-in var(--dur-slow) var(--ease-out) forwards;
+  transform: translateY(30px) scale(0.94);
+  transform-origin: center;
+  animation: load-in 1.1s var(--ease-out) forwards;
 }
 .load-in--1 { animation-delay: 0.05s; }
-.load-in--2 { animation-delay: 0.16s; }
-.load-in--3 { animation-delay: 0.32s; }
-.load-in--4 { animation-delay: 0.46s; }
-.load-in--5 { animation-delay: 0.6s; }
+.load-in--2 { animation-delay: 0.18s; }
+.load-in--3 { animation-delay: 0.38s; }
+.load-in--4 { animation-delay: 0.56s; }
+.load-in--5 { animation-delay: 0.74s; }
 @keyframes load-in {
-  to { opacity: 1; transform: translateY(0); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Dock pops in as one small ensemble moment, each pill scaling up from
+   its own center — never sliding in from a side, so the row stays symmetric. */
+.dock__item {
+  opacity: 0;
+  animation: dock-in 0.6s var(--ease-out) forwards;
+}
+.dock__item:nth-child(1) { animation-delay: 0.85s; }
+.dock__item:nth-child(2) { animation-delay: 0.92s; }
+.dock__item:nth-child(3) { animation-delay: 0.99s; }
+.dock__item:nth-child(4) { animation-delay: 1.06s; }
+.dock__item:nth-child(5) { animation-delay: 1.13s; }
+@keyframes dock-in {
+  from { opacity: 0; transform: scale(0.5); }
+  to { opacity: 1; transform: scale(1); }
 }
 
 /* ============ Pinned horizontal link gallery ============ */
@@ -342,7 +359,10 @@ html.lite-mode .glass-static {
 }
 .link-card:hover,
 .link-card:focus-visible {
-  transform: scale(1.04);
+  transform: scale(1.07);
+  box-shadow:
+    inset 0 1px 0 var(--glass-shadow-top),
+    0 16px 34px -14px rgba(0, 0, 0, 0.45);
 }
 .link-card--featured {
   width: min(82vw, 400px);
@@ -428,7 +448,7 @@ html.lite-mode .glass-static {
   transition: transform var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
 }
 .dock__item:hover, .dock__item:focus-visible {
-  transform: scale(1.06);
+  transform: scale(1.12);
   background: var(--accent-soft);
   color: var(--accent);
 }
@@ -475,6 +495,13 @@ html.lite-mode .site-footer__lite { color: var(--accent); border-color: var(--ac
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .load-in { opacity: 1; transform: none; animation: none; }
+  /* Continuous, non-essential loops stop entirely. */
   .orb, .hero__scroll-line { animation: none; }
+  /* One-off entrances stay, just shorter and gentler — a quick fade
+     instead of a bigger move, so the page still feels alive. */
+  .load-in {
+    transform: translateY(6px) scale(0.99);
+    animation-duration: 0.5s;
+  }
+  .dock__item { animation-duration: 0.3s; }
 }
