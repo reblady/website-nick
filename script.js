@@ -31,21 +31,40 @@
     const next = document.body.getAttribute("data-theme") === "dark" ? "light" : "dark";
     applyTheme(next);
     localStorage.setItem(THEME_KEY, next);
+
+    if (!prefersReducedMotion) {
+      document.querySelectorAll(".theme-toggle__dot").forEach((dot) => {
+        dot.classList.remove("is-morphing");
+        // eslint-disable-next-line no-unused-expressions
+        void dot.offsetWidth; // restart the animation even on rapid clicks
+        dot.classList.add("is-morphing");
+      });
+    }
   }
   themeToggles.forEach((btn) => btn && btn.addEventListener("click", toggleTheme));
 
-  /* ---------------- Mini header on scroll ---------------- */
+  /* ---------------- Mini header + back-to-top on scroll ---------------- */
   const hero = document.getElementById("hero");
   const miniHeader = document.getElementById("miniHeader");
-  if (hero && miniHeader && "IntersectionObserver" in window) {
+  const backToTop = document.getElementById("backToTop");
+  if (hero && "IntersectionObserver" in window) {
     const observer = new IntersectionObserver(
       ([entry]) => {
-        miniHeader.classList.toggle("is-visible", !entry.isIntersecting);
-        miniHeader.setAttribute("aria-hidden", entry.isIntersecting ? "true" : "false");
+        const pastHero = !entry.isIntersecting;
+        if (miniHeader) {
+          miniHeader.classList.toggle("is-visible", pastHero);
+          miniHeader.setAttribute("aria-hidden", pastHero ? "false" : "true");
+        }
+        if (backToTop) backToTop.classList.toggle("is-visible", pastHero);
       },
       { rootMargin: "-70% 0px 0px 0px" }
     );
     observer.observe(hero);
+  }
+  if (backToTop) {
+    backToTop.addEventListener("click", () => {
+      window.scrollTo({ top: 0, behavior: prefersReducedMotion ? "auto" : "smooth" });
+    });
   }
 
   /* ---------------- Lite mode (backdrop-filter kill switch) ---------------- */
@@ -189,7 +208,7 @@
      TODO: replace "#" with the real, non-expiring invite link. */
   const DISCORD_INVITE = null; // e.g. "https://discord.gg/xxxxxxx"
   if (DISCORD_INVITE) {
-    ["discordInviteLink", "discordInviteDock"].forEach((id) => {
+    ["discordInviteLink"].forEach((id) => {
       const el = document.getElementById(id);
       if (el) el.href = DISCORD_INVITE;
     });

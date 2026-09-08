@@ -22,10 +22,8 @@
 </head>
 <body data-theme="dark">
 
-  <!-- ambient background -->
+  <!-- ambient background: flat retro poster tone + halftone + film grain -->
   <div class="ambient" aria-hidden="true">
-    <div class="orb orb--a"></div>
-    <div class="orb orb--b"></div>
     <div class="grain"></div>
   </div>
 
@@ -125,29 +123,11 @@
 
   </main>
 
-  <!-- FLOATING DOCK -->
-  <nav class="dock glass-static" id="dock" aria-label="Schnellzugriff">
-    <a class="dock__item" href="https://www.youtube.com/@reblady" target="_blank" rel="noopener" data-label="YouTube">
-      <span class="dock__icon" data-icon="youtube"></span>
-      <span class="dock__label">YouTube</span>
-    </a>
-    <a class="dock__item" href="https://instagram.com/nick_tissen" target="_blank" rel="noopener" data-label="Instagram">
-      <span class="dock__icon" data-icon="instagram"></span>
-      <span class="dock__label">Instagram</span>
-    </a>
-    <a class="dock__item" href="#" target="_blank" rel="noopener" data-label="Discord" id="discordInviteDock">
-      <span class="dock__icon" data-icon="discord"></span>
-      <span class="dock__label">Discord</span>
-    </a>
-    <a class="dock__item" href="https://github.com/reblady" target="_blank" rel="noopener" data-label="GitHub">
-      <span class="dock__icon" data-icon="github"></span>
-      <span class="dock__label">GitHub</span>
-    </a>
-    <a class="dock__item" href="https://steamcommunity.com/id/reblady" target="_blank" rel="noopener" data-label="Steam">
-      <span class="dock__icon" data-icon="steam"></span>
-      <span class="dock__label">Steam</span>
-    </a>
-  </nav>
+  <!-- BACK TO TOP (the old dock duplicated the pinned link gallery, so it's gone —
+       this is the one thing that's still genuinely useful once you're deep in the page) -->
+  <button class="back-to-top glass-static" id="backToTop" type="button" aria-label="Nach oben scrollen">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-arrow-up"></use></svg>
+  </button>
 
   <footer class="site-footer">
     <span class="site-footer__detail">reblady.de · seit 2020 online</span>
@@ -161,6 +141,7 @@
     <symbol id="icon-discord" viewBox="0 0 24 24"><path d="M18.9 5.7A16.6 16.6 0 0 0 14.9 4.4c-.18.32-.38.75-.53 1.1a15.4 15.4 0 0 0-4.72 0 8.9 8.9 0 0 0-.53-1.1 16.6 16.6 0 0 0-4 1.3C2.9 9 2.2 12.2 2.5 15.3a16.7 16.7 0 0 0 5.07 2.56c.4-.55.76-1.14 1.07-1.76-.59-.22-1.15-.5-1.68-.82.14-.1.28-.21.41-.32a11.9 11.9 0 0 0 10.26 0c.14.11.27.22.41.32-.53.32-1.09.6-1.68.82.31.62.67 1.21 1.07 1.76a16.6 16.6 0 0 0 5.07-2.56c.34-3.6-.58-6.77-2.6-9.62ZM9.68 13.4c-.86 0-1.56-.79-1.56-1.76s.68-1.77 1.56-1.77 1.58.8 1.56 1.77c0 .97-.68 1.76-1.56 1.76Zm4.65 0c-.86 0-1.56-.79-1.56-1.76s.68-1.77 1.56-1.77 1.58.8 1.56 1.77c0 .97-.68 1.76-1.56 1.76Z" fill="currentColor"/></symbol>
     <symbol id="icon-github" viewBox="0 0 24 24"><path d="M12 2a10 10 0 0 0-3.16 19.5c.5.1.68-.22.68-.48v-1.7c-2.78.6-3.37-1.34-3.37-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.9 1.52 2.34 1.08 2.91.83.09-.65.35-1.08.64-1.33-2.22-.25-4.56-1.11-4.56-4.94 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.65 0 0 .84-.27 2.75 1.02a9.6 9.6 0 0 1 5 0c1.9-1.3 2.74-1.02 2.74-1.02.55 1.38.2 2.4.1 2.65.64.7 1.03 1.59 1.03 2.68 0 3.84-2.34 4.68-4.57 4.93.36.31.68.92.68 1.85v2.75c0 .27.18.58.69.48A10 10 0 0 0 12 2Z" fill="currentColor"/></symbol>
     <symbol id="icon-steam" viewBox="0 0 24 24"><path d="M12 2a10 10 0 0 0-9.95 9.1l5.34 2.21a2.8 2.8 0 0 1 1.6-.49l2.38-3.45v-.05a3.7 3.7 0 1 1 3.7 3.7h-.09l-3.4 2.43a2.8 2.8 0 0 1-5.55.42l-3.82-1.58A10 10 0 1 0 12 2Zm-2.6 15.3-1.1-.45a2.1 2.1 0 0 0 3.87-1.44l1.06.44a3.35 3.35 0 0 1-3.83 1.45ZM17 9.7a2.47 2.47 0 1 0-4.94 0 2.47 2.47 0 0 0 4.94 0Z" fill="currentColor"/></symbol>
+    <symbol id="icon-arrow-up" viewBox="0 0 24 24"><path d="M12 4.5c.32 0 .62.13.85.35l6 6a1.2 1.2 0 0 1-1.7 1.7l-3.95-3.96V18.3a1.2 1.2 0 0 1-2.4 0V8.6l-3.95 3.95a1.2 1.2 0 0 1-1.7-1.7l6-6c.23-.22.53-.35.85-.35Z" fill="currentColor"/></symbol>
   </svg>
 
   <script src="script.js" defer></script>
