@@ -34,10 +34,15 @@
 
     if (!prefersReducedMotion) {
       document.querySelectorAll(".theme-toggle__dot").forEach((dot) => {
-        dot.classList.remove("is-morphing");
-        // eslint-disable-next-line no-unused-expressions
+        dot.classList.remove("is-pulsing");
         void dot.offsetWidth; // restart the animation even on rapid clicks
-        dot.classList.add("is-morphing");
+        dot.classList.add("is-pulsing");
+      });
+      themeToggles.forEach((btn) => {
+        if (!btn) return;
+        btn.classList.remove("is-glinting");
+        void btn.offsetWidth;
+        btn.classList.add("is-glinting");
       });
     }
   }
@@ -116,33 +121,84 @@
   }
   window.addEventListener("scroll", onScrollActivity, { passive: true });
 
+  /* ---------------- Cursor-tracked glass spotlight ----------------
+     Standard "spotlight card" technique: track pointer position as a
+     percentage of the element's box and drive a CSS custom property,
+     which the radial-gradient in styles.css reads. Falls back to a
+     fixed default position on touch devices (no pointermove there). */
+  if (window.matchMedia("(pointer: fine)").matches) {
+    document.querySelectorAll(".glass-static, .glass-faux").forEach((el) => {
+      el.addEventListener("pointermove", (e) => {
+        const rect = el.getBoundingClientRect();
+        const mx = ((e.clientX - rect.left) / rect.width) * 100;
+        const my = ((e.clientY - rect.top) / rect.height) * 100;
+        el.style.setProperty("--mx", `${mx}%`);
+        el.style.setProperty("--my", `${my}%`);
+      });
+      el.addEventListener("pointerleave", () => {
+        el.style.removeProperty("--mx");
+        el.style.removeProperty("--my");
+      });
+    });
+  }
+
   /* ---------------- Pinned horizontal link gallery ---------------- */
   const galleryPin = document.getElementById("galleryPin");
   const galleryRow = document.getElementById("galleryRow");
 
   if (galleryPin && galleryRow && !prefersReducedMotion) {
-    let ticking = false;
+    let targetX = 0;
+    let currentX = 0;
+    let rafId = null;
 
-    function updateGallery() {
-      ticking = false;
-      const rect = galleryPin.getBoundingClientRect();
-      const total = galleryPin.offsetHeight - window.innerHeight;
-      if (total <= 0) return;
-      const progress = Math.min(1, Math.max(0, -rect.top / total));
+    // The scroll distance the pinned section needs is however far the row
+    // actually has to travel — not a fixed vh guess. On desktop the row is
+    // often much narrower relative to the viewport than on mobile, so a
+    // fixed height either finishes the pan in the first few % of scroll
+    // (leaving a long dead zone) or drags on forever. Recomputed on resize.
+    function setPinHeight() {
       const maxScroll = Math.max(0, galleryRow.scrollWidth - window.innerWidth);
-      galleryRow.style.transform = `translate3d(${-progress * maxScroll}px, 0, 0)`;
+      galleryPin.style.height = `calc(100svh + ${maxScroll * 1.1}px)`;
     }
 
-    function requestUpdate() {
-      if (!ticking) {
-        ticking = true;
-        requestAnimationFrame(updateGallery);
+    function computeTarget() {
+      const rect = galleryPin.getBoundingClientRect();
+      const total = galleryPin.offsetHeight - window.innerHeight;
+      if (total <= 0) {
+        targetX = 0;
+        return;
+      }
+      const progress = Math.min(1, Math.max(0, -rect.top / total));
+      const maxScroll = Math.max(0, galleryRow.scrollWidth - window.innerWidth);
+      targetX = -progress * maxScroll;
+    }
+
+    // Ease the row toward the scroll-derived target instead of snapping to
+    // it every frame — gives the pan a bit of smooth, weighted follow-through
+    // (similar to what smooth-scroll libraries do) without pulling one in.
+    function tick() {
+      currentX += (targetX - currentX) * 0.14;
+      if (Math.abs(targetX - currentX) < 0.05) currentX = targetX;
+      galleryRow.style.transform = `translate3d(${currentX}px, 0, 0)`;
+      if (currentX !== targetX) {
+        rafId = requestAnimationFrame(tick);
+      } else {
+        rafId = null;
       }
     }
 
-    window.addEventListener("scroll", requestUpdate, { passive: true });
-    window.addEventListener("resize", requestUpdate);
-    requestUpdate();
+    function requestTick() {
+      computeTarget();
+      if (!rafId) rafId = requestAnimationFrame(tick);
+    }
+
+    setPinHeight();
+    requestTick();
+    window.addEventListener("scroll", requestTick, { passive: true });
+    window.addEventListener("resize", () => {
+      setPinHeight();
+      requestTick();
+    });
   }
 
   /* ---------------- Aktuelles feed ---------------- */
