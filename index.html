@@ -22,6 +22,17 @@
 </head>
 <body data-theme="dark">
 
+  <!-- glass refraction filter: feTurbulence + feDisplacementMap gives the
+       backdrop a subtle warp, like light bending through real glass.
+       Referenced from backdrop-filter in styles.css. -->
+  <svg style="position:absolute; width:0; height:0" aria-hidden="true">
+    <filter id="glass-distortion" x="-20%" y="-20%" width="140%" height="140%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.008 0.012" numOctaves="2" seed="7" result="noise" />
+      <feGaussianBlur in="noise" stdDeviation="3" result="softNoise" />
+      <feDisplacementMap in="SourceGraphic" in2="softNoise" scale="46" xChannelSelector="R" yChannelSelector="G" />
+    </filter>
+  </svg>
+
   <!-- ambient background: flat retro poster tone + halftone + film grain -->
   <div class="ambient" aria-hidden="true">
     <div class="grain"></div>
@@ -32,7 +43,7 @@
     <span class="mini-header__name">Nick Tissen</span>
     <span class="mini-header__handle">@reblady</span>
     <button class="theme-toggle theme-toggle--mini" id="themeToggleMini" type="button" aria-label="Theme wechseln">
-      <span class="theme-toggle__dot"></span>
+      <span class="theme-toggle__track"><span class="theme-toggle__dot"></span></span>
     </button>
   </header>
 
@@ -41,7 +52,7 @@
     <!-- HERO / POSTER -->
     <section class="hero" id="hero">
       <button class="theme-toggle theme-toggle--hero" id="themeToggle" type="button" aria-label="Theme wechseln">
-        <span class="theme-toggle__dot"></span>
+        <span class="theme-toggle__track"><span class="theme-toggle__dot"></span></span>
       </button>
 
       <div class="hero__inner">
@@ -131,7 +142,6 @@
 
   <footer class="site-footer">
     <span class="site-footer__detail">reblady.de · seit 2020 online</span>
-    <button class="site-footer__lite" id="liteModeToggle" type="button">Leichter Modus</button>
   </footer>
 
   <!-- inline icon sprite -->

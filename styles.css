@@ -21,9 +21,10 @@ html, body { margin: 0; padding: 0; }
   --glass-inner-radius: 22px;
   --glass-outer-radius: calc(var(--glass-inner-radius) + var(--glass-pad));
 
-  /* blur amount is animated down while the page is actively scrolling */
-  --glass-blur: 22px;
-  --glass-saturate: 1.7;
+  /* blur is kept moderate on purpose: heavy blur washes out the refraction
+     warp below. Performance is not a concern for this pass. */
+  --glass-blur: 9px;
+  --glass-saturate: 1.9;
 
   /* default mouse-spotlight position before JS takes over (or on touch) */
   --mx: 30%;
@@ -47,12 +48,18 @@ html, body { margin: 0; padding: 0; }
   --glass-shadow-top: rgba(255, 232, 180, 0.22);
   --glass-shadow-bottom: rgba(0, 0, 0, 0.6);
   --chip-bg: rgba(255, 255, 255, 0.08);
-  --grain-opacity: 0.17;
+  --grain-opacity: 0.19;
   --page-gradient:
-    radial-gradient(120% 90% at 15% 0%, #f2ede2 0%, transparent 45%),
-    radial-gradient(100% 85% at 74% 10%, #e8b25a 0%, transparent 55%),
-    radial-gradient(95% 95% at 26% 58%, #d5424c 0%, transparent 62%),
-    radial-gradient(130% 110% at 88% 94%, #0a0806 0%, transparent 68%);
+    radial-gradient(140% 110% at 82% 96%, rgba(0, 0, 0, 0.55), transparent 55%),
+    linear-gradient(158deg,
+      #cfd0cb 0%,
+      #ded1b8 14%,
+      #d9ac74 32%,
+      #c17a55 48%,
+      #a3524a 62%,
+      #5c2c26 80%,
+      #170f0c 96%
+    );
   --page-base: #120e0a;
 }
 
@@ -73,12 +80,18 @@ html, body { margin: 0; padding: 0; }
   --glass-shadow-top: rgba(255, 255, 255, 0.85);
   --glass-shadow-bottom: rgba(90, 60, 30, 0.22);
   --chip-bg: rgba(40, 26, 12, 0.08);
-  --grain-opacity: 0.13;
+  --grain-opacity: 0.15;
   --page-gradient:
-    radial-gradient(120% 90% at 15% 0%, #fbf4e7 0%, transparent 45%),
-    radial-gradient(100% 85% at 74% 10%, #f0c98a 0%, transparent 55%),
-    radial-gradient(95% 95% at 26% 58%, #e8917a 0%, transparent 62%),
-    radial-gradient(130% 110% at 88% 94%, #cf9f78 0%, transparent 68%);
+    radial-gradient(140% 110% at 82% 96%, rgba(90, 55, 40, 0.25), transparent 55%),
+    linear-gradient(158deg,
+      #f8f4ea 0%,
+      #f3e6ca 16%,
+      #ecc48d 34%,
+      #dd9c74 50%,
+      #cc7d68 66%,
+      #b8654f 84%,
+      #a4553f 100%
+    );
   --page-base: #f2e6d3;
 }
 
@@ -93,6 +106,14 @@ body {
 
 a { color: inherit; text-decoration: none; }
 ul { list-style: none; margin: 0; padding: 0; }
+
+/* The theme switch drives its own circular reveal (see script.js);
+   the browser's default cross-fade would otherwise fight it. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
 
 /* ============ Ambient background: rich poster-gradient + heavy grain ============ */
 .ambient {
@@ -176,35 +197,35 @@ ul { list-style: none; margin: 0; padding: 0; }
   background: var(--glass-bg);
   -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
   backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  /* declared a second time on purpose: browsers that don't support an SVG
+     filter reference inside backdrop-filter treat this line as invalid and
+     keep the line above; browsers that do (mainly Chromium right now) get
+     the refraction warp on top. */
+  backdrop-filter: url(#glass-distortion) blur(var(--glass-blur)) saturate(var(--glass-saturate));
   box-shadow:
     inset 0 1.5px 0 var(--glass-shadow-top),
     inset 0 -8px 14px -10px var(--glass-shadow-bottom),
-    0 14px 32px -14px rgba(0, 0, 0, 0.45);
+    inset 0 0 22px -8px var(--glass-hotspot),
+    0 4px 10px -4px rgba(0, 0, 0, 0.3),
+    0 18px 40px -16px rgba(0, 0, 0, 0.5);
   contain: layout style paint;
   transition: background var(--dur-med) var(--ease-out), box-shadow var(--dur-med) var(--ease-out);
 }
 
-/* Faux glass: used on elements that move (link cards). No blur, ever. */
+/* Faux glass: used on elements that move (link cards). Now gets the same
+   refraction + backdrop treatment as static glass — cost isn't the concern
+   for this pass, convincing depth is. */
 .glass-faux {
   background: linear-gradient(160deg, var(--glass-bg), transparent 130%);
+  -webkit-backdrop-filter: blur(calc(var(--glass-blur) * 0.6)) saturate(var(--glass-saturate));
+  backdrop-filter: blur(calc(var(--glass-blur) * 0.6)) saturate(var(--glass-saturate));
+  backdrop-filter: url(#glass-distortion) blur(calc(var(--glass-blur) * 0.6)) saturate(var(--glass-saturate));
   box-shadow:
     inset 0 1.5px 0 var(--glass-shadow-top),
+    inset 0 0 18px -8px var(--glass-hotspot),
     0 10px 24px -14px rgba(0, 0, 0, 0.35);
   contain: layout style paint;
 }
-
-/* While the user is actively scrolling, shrink the blur radius to cut cost,
-   then relax back once scrolling stops. Transition is soft, no flicker. */
-html.is-scrolling { --glass-blur: 6px; }
-
-/* Lite mode: backdrop-filter fully disabled — manual toggle or auto-detected. */
-html.lite-mode .glass-static {
-  -webkit-backdrop-filter: none;
-  backdrop-filter: none;
-  background: var(--bg-1);
-}
-html.lite-mode .glass-static::before,
-html.lite-mode .glass-faux::before { display: none; }
 
 /* ============ Mini header (condensed, appears on scroll) ============ */
 .mini-header {
@@ -522,7 +543,7 @@ html.lite-mode .glass-faux::before { display: none; }
 /* ============ Footer ============ */
 .site-footer {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
   max-width: 560px;
   margin: 0 auto;
@@ -530,20 +551,6 @@ html.lite-mode .glass-faux::before { display: none; }
   font-size: 0.78rem;
   color: var(--fg-2);
 }
-.site-footer__lite {
-  appearance: none;
-  background: none;
-  border: 1px solid var(--glass-rim-2);
-  color: var(--fg-2);
-  padding: 6px 12px;
-  border-radius: 999px;
-  cursor: pointer;
-  font-family: var(--font-ui);
-  font-size: 0.75rem;
-  transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
-}
-.site-footer__lite:hover { color: var(--accent); border-color: var(--accent); }
-html.lite-mode .site-footer__lite { color: var(--accent); border-color: var(--accent); }
 
 /* ============ Accessibility ============ */
 :focus-visible {

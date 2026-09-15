@@ -27,24 +27,57 @@
     applyTheme(systemPrefersLight ? "light" : "dark");
   }
 
-  function toggleTheme() {
+  function toggleTheme(event) {
     const next = document.body.getAttribute("data-theme") === "dark" ? "light" : "dark";
-    applyTheme(next);
-    localStorage.setItem(THEME_KEY, next);
 
-    if (!prefersReducedMotion) {
-      document.querySelectorAll(".theme-toggle__dot").forEach((dot) => {
-        dot.classList.remove("is-pulsing");
-        void dot.offsetWidth; // restart the animation even on rapid clicks
-        dot.classList.add("is-pulsing");
-      });
-      themeToggles.forEach((btn) => {
-        if (!btn) return;
-        btn.classList.remove("is-glinting");
-        void btn.offsetWidth;
-        btn.classList.add("is-glinting");
-      });
+    function applyAndPulse() {
+      applyTheme(next);
+      localStorage.setItem(THEME_KEY, next);
+      if (!prefersReducedMotion) {
+        document.querySelectorAll(".theme-toggle__dot").forEach((dot) => {
+          dot.classList.remove("is-pulsing");
+          void dot.offsetWidth; // restart the animation even on rapid clicks
+          dot.classList.add("is-pulsing");
+        });
+        themeToggles.forEach((btn) => {
+          if (!btn) return;
+          btn.classList.remove("is-glinting");
+          void btn.offsetWidth;
+          btn.classList.add("is-glinting");
+        });
+      }
     }
+
+    // A circular reveal spreading from the toggle — like a drop of color
+    // filling the page — is what the View Transitions API is built for.
+    // Chromium supports it; Firefox/Zen and older Safari don't, so this
+    // degrades to a plain instant swap there, which is still correct.
+    const supportsViewTransitions = typeof document.startViewTransition === "function";
+    if (!supportsViewTransitions || prefersReducedMotion) {
+      applyAndPulse();
+      return;
+    }
+
+    const x = event ? event.clientX : window.innerWidth / 2;
+    const y = event ? event.clientY : window.innerHeight / 2;
+    const endRadius = Math.hypot(
+      Math.max(x, window.innerWidth - x),
+      Math.max(y, window.innerHeight - y)
+    );
+
+    const transition = document.startViewTransition(applyAndPulse);
+    transition.ready.then(() => {
+      document.documentElement.animate(
+        {
+          clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${endRadius}px at ${x}px ${y}px)`],
+        },
+        {
+          duration: 650,
+          easing: "cubic-bezier(0.65, 0, 0.35, 1)",
+          pseudoElement: "::view-transition-new(root)",
+        }
+      );
+    });
   }
   themeToggles.forEach((btn) => btn && btn.addEventListener("click", toggleTheme));
 
@@ -71,55 +104,6 @@
       window.scrollTo({ top: 0, behavior: prefersReducedMotion ? "auto" : "smooth" });
     });
   }
-
-  /* ---------------- Lite mode (backdrop-filter kill switch) ---------------- */
-  const LITE_KEY = "reblady-lite-mode";
-  const liteToggle = document.getElementById("liteModeToggle");
-
-  function setLiteMode(on, persist = true) {
-    html.classList.toggle("lite-mode", on);
-    if (persist) localStorage.setItem(LITE_KEY, on ? "1" : "0");
-  }
-  if (localStorage.getItem(LITE_KEY) === "1") setLiteMode(true, false);
-  if (liteToggle) {
-    liteToggle.addEventListener("click", () => {
-      setLiteMode(!html.classList.contains("lite-mode"));
-    });
-  }
-
-  /* ---------------- Adaptive low-power detection ----------------
-     Measures real frame times on load. If the device is visibly
-     struggling, permanently switch to lite mode (blur-free glass). */
-  const AUTO_LITE_KEY = "reblady-auto-lite-checked";
-  if (localStorage.getItem(AUTO_LITE_KEY) !== "1" && localStorage.getItem(LITE_KEY) !== "1") {
-    let frames = 0;
-    let badFrames = 0;
-    let last = performance.now();
-    const sampleWindow = 90; // ~1.5s at 60fps
-
-    function sample(now) {
-      const delta = now - last;
-      last = now;
-      frames++;
-      if (delta > 26.5) badFrames++; // worse than ~38fps counts as a bad frame
-      if (frames < sampleWindow) {
-        requestAnimationFrame(sample);
-      } else {
-        localStorage.setItem(AUTO_LITE_KEY, "1");
-        if (badFrames / frames > 0.35) setLiteMode(true);
-      }
-    }
-    requestAnimationFrame(sample);
-  }
-
-  /* ---------------- is-scrolling: shrink blur while scrolling ---------------- */
-  let scrollTimer = null;
-  function onScrollActivity() {
-    html.classList.add("is-scrolling");
-    clearTimeout(scrollTimer);
-    scrollTimer = setTimeout(() => html.classList.remove("is-scrolling"), 220);
-  }
-  window.addEventListener("scroll", onScrollActivity, { passive: true });
 
   /* ---------------- Cursor-tracked glass spotlight ----------------
      Standard "spotlight card" technique: track pointer position as a
@@ -155,10 +139,22 @@
     // actually has to travel — not a fixed vh guess. On desktop the row is
     // often much narrower relative to the viewport than on mobile, so a
     // fixed height either finishes the pan in the first few % of scroll
-    // (leaving a long dead zone) or drags on forever. Recomputed on resize.
+    // (leaving a long dead zone) or drags on forever. Recomputed whenever
+    // the row's actual size changes (resize, or webfonts swapping in and
+    // reflowing the cards — a common cause of a stale height => a sudden
+    // "jump/stick" right as you scroll into the section).
     function setPinHeight() {
       const maxScroll = Math.max(0, galleryRow.scrollWidth - window.innerWidth);
       galleryPin.style.height = `calc(100svh + ${maxScroll * 1.1}px)`;
+    }
+
+    // Ease-in-out the 0→1 scroll progress itself, not just the row's
+    // position. Without this, the row is already moving at full speed the
+    // instant the section becomes pinned, which reads as an abrupt snap.
+    // Easing means it ramps up from a standstill and eases out at the end,
+    // matching the vertical scroll it's replacing.
+    function easeInOutQuad(t) {
+      return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
     }
 
     function computeTarget() {
@@ -170,14 +166,14 @@
       }
       const progress = Math.min(1, Math.max(0, -rect.top / total));
       const maxScroll = Math.max(0, galleryRow.scrollWidth - window.innerWidth);
-      targetX = -progress * maxScroll;
+      targetX = -easeInOutQuad(progress) * maxScroll;
     }
 
     // Ease the row toward the scroll-derived target instead of snapping to
     // it every frame — gives the pan a bit of smooth, weighted follow-through
     // (similar to what smooth-scroll libraries do) without pulling one in.
     function tick() {
-      currentX += (targetX - currentX) * 0.14;
+      currentX += (targetX - currentX) * 0.16;
       if (Math.abs(targetX - currentX) < 0.05) currentX = targetX;
       galleryRow.style.transform = `translate3d(${currentX}px, 0, 0)`;
       if (currentX !== targetX) {
@@ -192,13 +188,26 @@
       if (!rafId) rafId = requestAnimationFrame(tick);
     }
 
-    setPinHeight();
-    requestTick();
-    window.addEventListener("scroll", requestTick, { passive: true });
-    window.addEventListener("resize", () => {
+    function recalc() {
       setPinHeight();
       requestTick();
-    });
+    }
+
+    recalc();
+    window.addEventListener("scroll", requestTick, { passive: true });
+    window.addEventListener("resize", recalc);
+
+    // Re-measure once webfonts finish swapping in — card widths can shift
+    // slightly, which otherwise leaves the pin height stale.
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(recalc);
+    }
+
+    // Re-measure if the row's own size changes for any other reason
+    // (images loading, dynamic content, etc).
+    if ("ResizeObserver" in window) {
+      new ResizeObserver(recalc).observe(galleryRow);
+    }
   }
 
   /* ---------------- Aktuelles feed ---------------- */
