@@ -252,14 +252,14 @@
      aberration, applied via `backdrop-filter: url(#displace)`.
 
      This filters the *real* backdrop, so it's meaningfully more expensive
-     than the plain blur it replaces. It's therefore reserved for the two
-     .glass--blur elements only (never the moving link cards) and switched
-     off outright whenever it would actually cost something: while
-     scrolling — the page behind these fixed elements still changes every
-     frame even though the elements themselves don't move, which is the
-     exact case the project's performance notes warn about — and in
-     Leichter Modus. Both cases fall straight back to the plain CSS blur
-     that's already there (see .glass--blur in styles.css). */
+     than the plain blur every .glass element already has. It's therefore
+     reserved for the two .glass--refract elements (mini-header,
+     back-to-top — never the moving link cards) and switched off outright
+     whenever it would actually cost something: while scrolling — the page
+     behind these fixed elements still changes every frame even though the
+     elements themselves don't move, which is the exact case the project's
+     performance notes warn about — and in Leichter Modus. Both cases fall
+     straight back to the plain .glass blur underneath. */
   const supportsBackdropFilterUrl = (() => {
     const test = document.createElement("div");
     test.style.cssText = "backdrop-filter: url(#test)";
@@ -312,7 +312,7 @@
       );
     }
 
-    const refractionEls = Array.from(document.querySelectorAll(".glass--blur"));
+    const refractionEls = Array.from(document.querySelectorAll(".glass--refract"));
     const refractionCache = new WeakMap();
 
     function regenerateRefraction() {

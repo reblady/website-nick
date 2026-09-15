@@ -37,7 +37,7 @@ html, body { margin: 0; padding: 0; }
   --accent-soft: rgba(224, 172, 84, 0.18);
   --chip-bg: rgba(255, 255, 255, 0.08);
 
-  --glass-bg: rgba(28, 23, 17, 0.42);
+  --glass-bg: rgba(28, 23, 17, 0.22);
   --glass-bg-solid: rgba(28, 23, 17, 0.72);
   --glass-border-a: rgba(255, 226, 170, 0.4);
   --glass-border-b: rgba(150, 130, 255, 0.18);
@@ -61,7 +61,7 @@ html, body { margin: 0; padding: 0; }
   --accent-soft: rgba(189, 92, 55, 0.16);
   --chip-bg: rgba(40, 26, 12, 0.08);
 
-  --glass-bg: rgba(255, 250, 240, 0.45);
+  --glass-bg: rgba(255, 250, 240, 0.28);
   --glass-bg-solid: rgba(255, 250, 240, 0.78);
   --glass-border-a: rgba(255, 255, 255, 0.8);
   --glass-border-b: rgba(189, 92, 55, 0.25);
@@ -114,14 +114,13 @@ ul { list-style: none; margin: 0; padding: 0; }
 }
 
 /* ============ Glass system ============
-   One shared recipe, two variants:
-     .glass       — base: tint + gradient rim + cursor-tracked highlight.
-                    Cheap enough to use on anything, including things that
-                    move (the pinned gallery cards).
-     .glass--blur — adds real backdrop-filter blur. Reserved for elements
-                    that never move on their own (mini-header, back-to-top,
-                    theme toggle) — filtering a backdrop that's itself
-                    moving is the expensive case, not filtering a static one. */
+   Real backdrop-filter blur, on everything, always — a tinted panel with
+   no blur just reads as a flat card, not glass (proven the hard way).
+   The performance risk that ruled real blur out for moving elements is
+   handled below instead: blur radius drops hard while scrolling (which
+   covers the pinned gallery's whole horizontal pan, since that's driven
+   by the same window scroll) and Leichter Modus strips it entirely if
+   frame times ever say the device can't keep up. */
 .glass {
   position: relative;
   isolation: isolate;
@@ -129,16 +128,14 @@ ul { list-style: none; margin: 0; padding: 0; }
   background:
     linear-gradient(var(--glass-bg), var(--glass-bg)) padding-box,
     linear-gradient(135deg, var(--glass-border-a), transparent 40%, transparent 60%, var(--glass-border-b)) border-box;
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  backdrop-filter: blur(var(--glass-blur));
   box-shadow:
     inset 0 1px 0 var(--glass-shadow-top),
     0 3px 10px -4px rgba(0, 0, 0, 0.25),
     0 16px 32px -18px rgba(0, 0, 0, 0.45);
   contain: layout style paint;
   transition: background var(--dur-med) var(--ease-out), box-shadow var(--dur-med) var(--ease-out), --glass-blur 320ms var(--ease-out);
-}
-.glass--blur {
-  -webkit-backdrop-filter: blur(var(--glass-blur));
-  backdrop-filter: blur(var(--glass-blur));
 }
 
 /* cursor-tracked specular highlight — one soft, single light source,
@@ -173,7 +170,7 @@ ul { list-style: none; margin: 0; padding: 0; }
       flipped manually via the footer button. Kills backdrop-filter and
       falls back to the tint-only look .glass already has without it. */
 html.is-scrolling { --glass-blur: 6px; }
-html.is-low-power .glass--blur {
+html.is-low-power .glass {
   -webkit-backdrop-filter: none;
   backdrop-filter: none;
   background:
@@ -199,13 +196,13 @@ html.is-low-power .glass--blur {
 .mini-header__name { font-weight: 700; font-size: 0.95rem; letter-spacing: 0.01em; }
 .mini-header__handle { color: var(--fg-2); font-size: 0.85rem; }
 
-/* ============ Theme toggle ============ */
+/* ============ Theme toggle ============
+   Reuses .glass (added in the markup) for background/border/blur — this
+   used to paint its own flat, unblurred background and was the other
+   thing reading as a solid metal pill instead of glass. */
 .theme-toggle {
   appearance: none;
-  position: relative;
   overflow: hidden;
-  border: 1px solid var(--glass-border-b);
-  background: var(--glass-bg);
   width: 40px; height: 24px;
   border-radius: 999px;
   padding: 3px;
@@ -376,7 +373,19 @@ html.is-low-power .glass--blur {
 }
 .link-card--featured {
   width: min(82vw, 400px);
-  background: linear-gradient(160deg, var(--accent-soft), transparent 130%);
+  /* layered on top of .glass's own background (padding-box tint +
+     border-box rim), not replacing it — a plain override here is what
+     made the featured card lose its rim and read as a flat panel. */
+  background:
+    linear-gradient(160deg, var(--accent-soft), transparent 130%) padding-box,
+    linear-gradient(var(--glass-bg), var(--glass-bg)) padding-box,
+    linear-gradient(135deg, var(--glass-border-a), transparent 40%, transparent 60%, var(--glass-border-b)) border-box;
+}
+html.is-low-power .link-card--featured {
+  background:
+    linear-gradient(160deg, var(--accent-soft), transparent 130%) padding-box,
+    linear-gradient(var(--glass-bg-solid), var(--glass-bg-solid)) padding-box,
+    linear-gradient(135deg, var(--glass-border-a), transparent 40%, transparent 60%, var(--glass-border-b)) border-box;
 }
 .link-card__icon {
   flex: 0 0 auto;
