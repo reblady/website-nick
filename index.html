@@ -22,25 +22,13 @@
 </head>
 <body data-theme="dark">
 
-  <!-- glass warp filter: feTurbulence + feDisplacementMap, applied via
-       `filter` to a normal painted layer (see .glass-static::before in
-       styles.css). Referencing this from `filter` — not `backdrop-filter` —
-       is what makes it render reliably across browsers. -->
-  <svg style="position:absolute; width:0; height:0" aria-hidden="true">
-    <filter id="glass-distortion" x="-50%" y="-50%" width="200%" height="200%">
-      <feTurbulence type="fractalNoise" baseFrequency="0.012 0.018" numOctaves="2" seed="11" result="noise" />
-      <feGaussianBlur in="noise" stdDeviation="5" result="softNoise" />
-      <feDisplacementMap in="SourceGraphic" in2="softNoise" scale="55" xChannelSelector="R" yChannelSelector="G" />
-    </filter>
-  </svg>
-
-  <!-- ambient background: flat retro poster tone + halftone + film grain -->
+  <!-- ambient background: flat retro poster tone + film grain -->
   <div class="ambient" aria-hidden="true">
     <div class="grain"></div>
   </div>
 
   <!-- condensed header, fades in on scroll -->
-  <header class="mini-header glass-static" id="miniHeader" aria-hidden="true">
+  <header class="mini-header glass glass--blur" id="miniHeader" aria-hidden="true">
     <span class="mini-header__name">Nick Tissen</span>
     <span class="mini-header__handle">@reblady</span>
     <button class="theme-toggle theme-toggle--mini" id="themeToggleMini" type="button" aria-label="Theme wechseln">
@@ -64,7 +52,7 @@
         </h1>
         <p class="hero__motto load-in load-in--3">Content, Code und was gerade sonst noch entsteht.</p>
 
-        <div class="hero__status glass-faux load-in load-in--4" id="discordStatus" hidden>
+        <div class="hero__status glass load-in load-in--4" id="discordStatus" hidden>
           <span class="hero__status-dot" id="discordStatusDot"></span>
           <span id="discordStatusText">—</span>
         </div>
@@ -81,7 +69,7 @@
       <div class="gallery-pin__track" id="galleryTrack">
         <div class="gallery-pin__row" id="galleryRow">
 
-          <a class="link-card link-card--featured glass-faux" href="https://www.youtube.com/@reblady" target="_blank" rel="noopener">
+          <a class="link-card link-card--featured glass" href="https://www.youtube.com/@reblady" target="_blank" rel="noopener">
             <span class="link-card__icon" data-icon="youtube"></span>
             <span class="link-card__body">
               <span class="link-card__title">YouTube</span>
@@ -89,7 +77,7 @@
             </span>
           </a>
 
-          <a class="link-card glass-faux" href="https://instagram.com/nick_tissen" target="_blank" rel="noopener">
+          <a class="link-card glass" href="https://instagram.com/nick_tissen" target="_blank" rel="noopener">
             <span class="link-card__icon" data-icon="instagram"></span>
             <span class="link-card__body">
               <span class="link-card__title">Instagram</span>
@@ -97,7 +85,7 @@
             </span>
           </a>
 
-          <a class="link-card glass-faux" href="#" target="_blank" rel="noopener" id="discordInviteLink">
+          <a class="link-card glass" href="#" target="_blank" rel="noopener" id="discordInviteLink">
             <span class="link-card__icon" data-icon="discord"></span>
             <span class="link-card__body">
               <span class="link-card__title">Discord</span>
@@ -105,7 +93,7 @@
             </span>
           </a>
 
-          <a class="link-card glass-faux" href="https://github.com/reblady" target="_blank" rel="noopener">
+          <a class="link-card glass" href="https://github.com/reblady" target="_blank" rel="noopener">
             <span class="link-card__icon" data-icon="github"></span>
             <span class="link-card__body">
               <span class="link-card__title">GitHub</span>
@@ -113,7 +101,7 @@
             </span>
           </a>
 
-          <a class="link-card glass-faux" href="https://steamcommunity.com/id/reblady" target="_blank" rel="noopener">
+          <a class="link-card glass" href="https://steamcommunity.com/id/reblady" target="_blank" rel="noopener">
             <span class="link-card__icon" data-icon="steam"></span>
             <span class="link-card__body">
               <span class="link-card__title">Steam</span>
@@ -135,14 +123,13 @@
 
   </main>
 
-  <!-- BACK TO TOP (the old dock duplicated the pinned link gallery, so it's gone —
-       this is the one thing that's still genuinely useful once you're deep in the page) -->
-  <button class="back-to-top glass-static" id="backToTop" type="button" aria-label="Nach oben scrollen">
+  <button class="back-to-top glass glass--blur" id="backToTop" type="button" aria-label="Nach oben scrollen">
     <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-arrow-up"></use></svg>
   </button>
 
   <footer class="site-footer">
     <span class="site-footer__detail">reblady.de · seit 2020 online</span>
+    <button class="low-power-toggle" type="button" data-low-power-toggle>Leichter Modus</button>
   </footer>
 
   <!-- inline icon sprite -->

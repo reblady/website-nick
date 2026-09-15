@@ -3,6 +3,7 @@
 
   const html = document.documentElement;
   const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const pointerFine = window.matchMedia("(pointer: fine)").matches;
 
   /* ---------------- Icons ---------------- */
   document.querySelectorAll("[data-icon]").forEach((el) => {
@@ -20,12 +21,7 @@
   }
 
   const storedTheme = localStorage.getItem(THEME_KEY);
-  if (storedTheme) {
-    applyTheme(storedTheme);
-  } else {
-    const systemPrefersLight = window.matchMedia("(prefers-color-scheme: light)").matches;
-    applyTheme(systemPrefersLight ? "light" : "dark");
-  }
+  applyTheme(storedTheme || (window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark"));
 
   function toggleTheme(event) {
     const next = document.body.getAttribute("data-theme") === "dark" ? "light" : "dark";
@@ -48,45 +44,31 @@
       }
     }
 
-    // A circular reveal spreading from the toggle — like a drop of color
-    // filling the page — is what the View Transitions API is built for.
-    // Chromium supports it; Firefox/Zen and older Safari don't, so this
-    // degrades to a plain instant swap there, which is still correct.
-    const supportsViewTransitions = typeof document.startViewTransition === "function";
-    if (!supportsViewTransitions || prefersReducedMotion) {
+    // Circular reveal from the toggle — supported in Chromium, degrades to
+    // a plain instant swap elsewhere (still correct, just less fancy).
+    if (typeof document.startViewTransition !== "function" || prefersReducedMotion) {
       applyAndPulse();
       return;
     }
-
     const x = event ? event.clientX : window.innerWidth / 2;
     const y = event ? event.clientY : window.innerHeight / 2;
-    const endRadius = Math.hypot(
-      Math.max(x, window.innerWidth - x),
-      Math.max(y, window.innerHeight - y)
-    );
-
+    const endRadius = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y));
     const transition = document.startViewTransition(applyAndPulse);
     transition.ready.then(() => {
       document.documentElement.animate(
-        {
-          clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${endRadius}px at ${x}px ${y}px)`],
-        },
-        {
-          duration: 650,
-          easing: "cubic-bezier(0.65, 0, 0.35, 1)",
-          pseudoElement: "::view-transition-new(root)",
-        }
+        { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${endRadius}px at ${x}px ${y}px)`] },
+        { duration: 650, easing: "cubic-bezier(0.65, 0, 0.35, 1)", pseudoElement: "::view-transition-new(root)" }
       );
     });
   }
   themeToggles.forEach((btn) => btn && btn.addEventListener("click", toggleTheme));
 
-  /* ---------------- Mini header + back-to-top on scroll ---------------- */
+  /* ---------------- Mini header + back-to-top ---------------- */
   const hero = document.getElementById("hero");
   const miniHeader = document.getElementById("miniHeader");
   const backToTop = document.getElementById("backToTop");
   if (hero && "IntersectionObserver" in window) {
-    const observer = new IntersectionObserver(
+    new IntersectionObserver(
       ([entry]) => {
         const pastHero = !entry.isIntersecting;
         if (miniHeader) {
@@ -96,8 +78,7 @@
         if (backToTop) backToTop.classList.toggle("is-visible", pastHero);
       },
       { rootMargin: "-70% 0px 0px 0px" }
-    );
-    observer.observe(hero);
+    ).observe(hero);
   }
   if (backToTop) {
     backToTop.addEventListener("click", () => {
@@ -105,73 +86,69 @@
     });
   }
 
-  /* ---------------- Cursor-tracked glass spotlight ----------------
-     Standard "spotlight card" technique: track pointer position as a
-     percentage of the element's box and drive a CSS custom property,
-     which the radial-gradient in styles.css reads. Falls back to a
-     fixed default position on touch devices (no pointermove there). */
-  if (window.matchMedia("(pointer: fine)").matches) {
-    document.querySelectorAll(".glass-static, .glass-faux").forEach((el) => {
+  /* ---------------- Cursor-tracked glass highlight + card tilt ----------------
+     Every .glass element gets a spotlight that follows the pointer (drives
+     --mx/--my, read by the radial-gradient in styles.css). Link cards
+     additionally tilt toward the pointer — together they're what sells
+     "glass" now that moving cards carry no backdrop-filter blur. */
+  if (pointerFine) {
+    document.querySelectorAll(".glass").forEach((el) => {
       el.addEventListener("pointermove", (e) => {
         const rect = el.getBoundingClientRect();
-        const mx = ((e.clientX - rect.left) / rect.width) * 100;
-        const my = ((e.clientY - rect.top) / rect.height) * 100;
-        el.style.setProperty("--mx", `${mx}%`);
-        el.style.setProperty("--my", `${my}%`);
+        el.style.setProperty("--mx", `${((e.clientX - rect.left) / rect.width) * 100}%`);
+        el.style.setProperty("--my", `${((e.clientY - rect.top) / rect.height) * 100}%`);
       });
       el.addEventListener("pointerleave", () => {
         el.style.removeProperty("--mx");
         el.style.removeProperty("--my");
       });
     });
+
+    if (!prefersReducedMotion) {
+      document.querySelectorAll(".link-card").forEach((card) => {
+        card.addEventListener("pointermove", (e) => {
+          const rect = card.getBoundingClientRect();
+          const dx = (e.clientX - rect.left) / rect.width - 0.5;
+          const dy = (e.clientY - rect.top) / rect.height - 0.5;
+          card.style.setProperty("--tilt-x", `${(-dy * 10).toFixed(2)}deg`);
+          card.style.setProperty("--tilt-y", `${(dx * 10).toFixed(2)}deg`);
+        });
+        card.addEventListener("pointerleave", () => {
+          card.style.setProperty("--tilt-x", "0deg");
+          card.style.setProperty("--tilt-y", "0deg");
+        });
+      });
+    }
   }
 
   /* ---------------- Pinned horizontal link gallery ---------------- */
   const galleryPin = document.getElementById("galleryPin");
   const galleryRow = document.getElementById("galleryRow");
+  let galleryTick = null; // set below if the gallery is active
 
   if (galleryPin && galleryRow && !prefersReducedMotion) {
     let targetX = 0;
     let currentX = 0;
     let rafId = null;
 
-    // The scroll distance the pinned section needs is however far the row
-    // actually has to travel — not a fixed vh guess. On desktop the row is
-    // often much narrower relative to the viewport than on mobile, so a
-    // fixed height either finishes the pan in the first few % of scroll
-    // (leaving a long dead zone) or drags on forever. Recomputed whenever
-    // the row's actual size changes (resize, or webfonts swapping in and
-    // reflowing the cards — a common cause of a stale height => a sudden
-    // "jump/stick" right as you scroll into the section).
+    function easeInOutQuad(t) {
+      return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+    }
+
     function setPinHeight() {
       const maxScroll = Math.max(0, galleryRow.scrollWidth - window.innerWidth);
       galleryPin.style.height = `calc(100svh + ${maxScroll * 1.1}px)`;
     }
 
-    // Ease-in-out the 0→1 scroll progress itself, not just the row's
-    // position. Without this, the row is already moving at full speed the
-    // instant the section becomes pinned, which reads as an abrupt snap.
-    // Easing means it ramps up from a standstill and eases out at the end,
-    // matching the vertical scroll it's replacing.
-    function easeInOutQuad(t) {
-      return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
-    }
-
     function computeTarget() {
-      const rect = galleryPin.getBoundingClientRect();
       const total = galleryPin.offsetHeight - window.innerHeight;
-      if (total <= 0) {
-        targetX = 0;
-        return;
-      }
+      if (total <= 0) { targetX = 0; return; }
+      const rect = galleryPin.getBoundingClientRect();
       const progress = Math.min(1, Math.max(0, -rect.top / total));
       const maxScroll = Math.max(0, galleryRow.scrollWidth - window.innerWidth);
       targetX = -easeInOutQuad(progress) * maxScroll;
     }
 
-    // Ease the row toward the scroll-derived target instead of snapping to
-    // it every frame — gives the pan a bit of smooth, weighted follow-through
-    // (similar to what smooth-scroll libraries do) without pulling one in.
     function tick() {
       currentX += (targetX - currentX) * 0.16;
       if (Math.abs(targetX - currentX) < 0.05) currentX = targetX;
@@ -183,31 +160,82 @@
       }
     }
 
-    function requestTick() {
+    galleryTick = () => {
       computeTarget();
       if (!rafId) rafId = requestAnimationFrame(tick);
-    }
+    };
 
     function recalc() {
       setPinHeight();
-      requestTick();
+      galleryTick();
     }
 
     recalc();
-    window.addEventListener("scroll", requestTick, { passive: true });
     window.addEventListener("resize", recalc);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(recalc);
+    if ("ResizeObserver" in window) new ResizeObserver(recalc).observe(galleryRow);
+  }
 
-    // Re-measure once webfonts finish swapping in — card widths can shift
-    // slightly, which otherwise leaves the pin height stale.
-    if (document.fonts && document.fonts.ready) {
-      document.fonts.ready.then(recalc);
-    }
+  /* ---------------- Scroll: gallery drive + blur reduction + low-power ----------------
+     One rAF-throttled scroll listener drives everything scroll-position-
+     dependent: the pinned gallery's target, and a transient "is-scrolling"
+     flag that temporarily drops the real-glass blur radius (see
+     styles.css) — backdrop-filter blur is the single most expensive thing
+     on this page, especially while something is actively moving. */
+  const LOW_POWER_KEY = "reblady-low-power";
+  const lowPowerToggles = document.querySelectorAll("[data-low-power-toggle]");
 
-    // Re-measure if the row's own size changes for any other reason
-    // (images loading, dynamic content, etc).
-    if ("ResizeObserver" in window) {
-      new ResizeObserver(recalc).observe(galleryRow);
-    }
+  function setLowPower(on, persist) {
+    html.classList.toggle("is-low-power", on);
+    if (persist) localStorage.setItem(LOW_POWER_KEY, on ? "1" : "0");
+    lowPowerToggles.forEach((btn) => btn.setAttribute("aria-pressed", String(on)));
+  }
+  setLowPower(localStorage.getItem(LOW_POWER_KEY) === "1", false);
+  lowPowerToggles.forEach((btn) => {
+    btn.addEventListener("click", () => setLowPower(!html.classList.contains("is-low-power"), true));
+  });
+
+  let scrollTicking = false;
+  let scrollSettleTimer = null;
+  window.addEventListener(
+    "scroll",
+    () => {
+      if (!scrollTicking) {
+        scrollTicking = true;
+        requestAnimationFrame(() => {
+          html.classList.add("is-scrolling");
+          if (galleryTick) galleryTick();
+          scrollTicking = false;
+        });
+      }
+      clearTimeout(scrollSettleTimer);
+      scrollSettleTimer = setTimeout(() => html.classList.remove("is-scrolling"), 160);
+    },
+    { passive: true }
+  );
+
+  // Adaptive low-power detection: sample real frame times after the first
+  // scroll; sustained jank (median > ~30fps) flips low-power on for good.
+  if (!html.classList.contains("is-low-power") && !prefersReducedMotion) {
+    window.addEventListener(
+      "scroll",
+      () => {
+        let samples = [];
+        let last = null;
+        function sampleFrame(t) {
+          if (last !== null) samples.push(t - last);
+          last = t;
+          if (samples.length < 60) {
+            requestAnimationFrame(sampleFrame);
+            return;
+          }
+          const sorted = [...samples].sort((a, b) => a - b);
+          if (sorted[Math.floor(sorted.length / 2)] > 32) setLowPower(true, true);
+        }
+        requestAnimationFrame(sampleFrame);
+      },
+      { once: true, passive: true }
+    );
   }
 
   /* ---------------- Aktuelles feed ---------------- */
@@ -242,15 +270,9 @@
   const statusBox = document.getElementById("discordStatus");
   const statusDot = document.getElementById("discordStatusDot");
   const statusText = document.getElementById("discordStatusText");
+  const STATUS_LABELS = { online: "Online", idle: "Abwesend", dnd: "Nicht stören", offline: "Offline" };
 
-  const STATUS_LABELS = {
-    online: "Online",
-    idle: "Abwesend",
-    dnd: "Nicht stören",
-    offline: "Offline",
-  };
-
-  if (statusBox && DISCORD_USER_ID && DISCORD_USER_ID !== "REPLACE_WITH_DISCORD_USER_ID") {
+  if (statusBox && DISCORD_USER_ID !== "REPLACE_WITH_DISCORD_USER_ID") {
     fetch(`https://api.lanyard.rest/v1/users/${DISCORD_USER_ID}`)
       .then((res) => (res.ok ? res.json() : Promise.reject(res.status)))
       .then((json) => {
@@ -259,23 +281,19 @@
         const state = data.discord_status || "offline";
         statusDot.setAttribute("data-state", state);
         const spotify = data.listening_to_spotify && data.spotify;
-        statusText.textContent = spotify
-          ? `Hört gerade ${spotify.song} — ${spotify.artist}`
-          : STATUS_LABELS[state] || "Offline";
+        statusText.textContent = spotify ? `Hört gerade ${spotify.song} — ${spotify.artist}` : STATUS_LABELS[state] || "Offline";
         statusBox.hidden = false;
       })
       .catch(() => {
-        /* silently hide on failure — this is a nice-to-have, not critical */
+        /* nice-to-have, not critical — silently stay hidden on failure */
       });
   }
 
   /* ---------------- Discord invite placeholder ----------------
-     TODO: replace "#" with the real, non-expiring invite link. */
+     TODO: replace with the real, non-expiring invite link. */
   const DISCORD_INVITE = null; // e.g. "https://discord.gg/xxxxxxx"
   if (DISCORD_INVITE) {
-    ["discordInviteLink"].forEach((id) => {
-      const el = document.getElementById(id);
-      if (el) el.href = DISCORD_INVITE;
-    });
+    const el = document.getElementById("discordInviteLink");
+    if (el) el.href = DISCORD_INVITE;
   }
 })();
