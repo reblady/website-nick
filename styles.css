@@ -153,24 +153,28 @@ ul { list-style: none; margin: 0; padding: 0; }
 }
 
 /* ============ Glass system ============
-   The previous version leaned on an SVG feDisplacementMap piped through
-   backdrop-filter for "refraction". It's a real technique, but support for
-   that specific combination is inconsistent enough (esp. Firefox/Zen) that
-   it was rendering as a flat, opaque fill instead of glass — worse than
-   doing nothing. Dropped entirely. What's here instead is the boring,
-   reliable recipe every convincing glassmorphism implementation actually
-   uses: a LOW-opacity neutral tint (so the blurred backdrop is still the
-   dominant thing you see, not a painted rectangle), real backdrop blur,
-   and directional light — bright along the top edge, dark pooling along
-   the bottom — because that's what actually reads as "curved surface
-   catching light" rather than "highlighted rectangle". */
+   What was making this look like a metal plate: a strong linear bevel
+   (bright top edge fading to dark bottom edge) painted uniformly across
+   the whole tile. That gradient-across-a-flat-surface look is exactly how
+   CSS "brushed metal" buttons are built — it reads as an embossed solid,
+   not glass. Real glass doesn't have one big gradient; it has organic,
+   uneven warping and a small, sharp, bright highlight.
+
+   So: the backdrop blur is still there for translucency, but the star of
+   the effect is now a self-contained, irregular colour-wash layer with an
+   SVG feTurbulence/feDisplacementMap warp applied via `filter` (not
+   `backdrop-filter` — filtering backdrop content that way is what looked
+   broken before; filtering a normal painted layer with the same filter is
+   reliably supported everywhere). That gives the tile the uneven, liquid
+   quality glass actually has, instead of a flat bevel. */
 .glass-static,
 .glass-faux {
   position: relative;
   isolation: isolate;
+  overflow: hidden;
 }
 
-/* Layer 1 — the glass body itself: barely-there tint + real blur */
+/* Layer 1 — the glass body: barely-there tint + real blur for translucency */
 .glass-static {
   background: var(--glass-bg);
   -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
@@ -185,46 +189,47 @@ ul { list-style: none; margin: 0; padding: 0; }
   contain: layout style paint;
 }
 
-/* Layer 2 (::before) — specular sheen: a soft directional band plus a
-   cursor-tracked hotspot. "screen" blending so it reads as added light
-   bouncing off the surface, not a grey haze sitting on top of it. */
+/* Layer 2 (::before) — the actual "liquid" part. A few soft colour blobs,
+   pushed through the turbulence filter so their edges warp unevenly
+   instead of being clean circles, then screened onto the tint. This is
+   deliberately oversized (inset: -25%) so the warp never leaves a visible
+   straight edge, and clipped by `overflow: hidden` on the parent above. */
 .glass-static::before,
 .glass-faux::before {
   content: "";
   position: absolute;
-  inset: 0;
-  border-radius: inherit;
+  inset: -25%;
   background:
-    radial-gradient(200px circle at var(--mx) var(--my), var(--glass-hotspot), transparent 70%),
-    linear-gradient(125deg, transparent 30%, var(--glass-hotspot) 46%, transparent 62%);
-  background-repeat: no-repeat;
-  background-size: 100% 100%, 220% 220%;
-  background-position: 0 0, -120% -120%;
+    radial-gradient(30% 34% at 22% 18%, rgba(255, 255, 255, 0.95), transparent 72%),
+    radial-gradient(26% 30% at 78% 30%, rgba(255, 205, 150, 0.5), transparent 70%),
+    radial-gradient(38% 40% at 65% 78%, var(--glass-hotspot), transparent 72%),
+    radial-gradient(160px circle at var(--mx) var(--my), rgba(255, 255, 255, 0.9), transparent 75%);
+  filter: url(#glass-distortion) blur(1px);
   mix-blend-mode: screen;
-  transition: background-position 0.7s var(--ease-out);
+  opacity: 0.85;
   pointer-events: none;
   z-index: 1;
+  transition: opacity var(--dur-med) var(--ease-out);
 }
 .glass-static:hover::before, .glass-static:focus-within::before,
 .glass-faux:hover::before, .glass-faux:focus-within::before {
-  background-position: 0 0, 120% 120%;
+  opacity: 1;
 }
 
-/* Layer 3 (::after) — the rim. Two things stacked in one mask-cut ring:
-   a bright-top/dark-bottom sweep (like light catching the physical top
-   edge of curved glass and pooling in shadow at the bottom), plus the
-   accent-tinted diagonal for a bit of colour in the edge. Mask-composite,
-   not border-image — border-image is what broke the corners before. */
+/* Layer 3 (::after) — a thin, mostly-clear rim with a hint of warm/cool
+   split at opposite corners (a cheap, reliable stand-in for the colour
+   fringing you get at a real lens edge). Mask-composite, not
+   border-image — border-image is what broke the corners before. */
 .glass-static::after,
 .glass-faux::after {
   content: "";
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  padding: 1.5px;
+  padding: 1px;
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.1) 22%, transparent 48%, transparent 62%, rgba(0, 0, 0, 0.45) 100%),
-    linear-gradient(135deg, rgba(255, 205, 150, 0.85) 0%, transparent 35%, transparent 65%, rgba(150, 195, 255, 0.55) 100%);
+    linear-gradient(135deg, rgba(255, 255, 255, 0.7), transparent 30%, transparent 70%, rgba(255, 255, 255, 0.25)),
+    linear-gradient(135deg, rgba(255, 205, 150, 0.7) 0%, transparent 30%, transparent 70%, rgba(150, 195, 255, 0.4) 100%);
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
@@ -233,21 +238,17 @@ ul { list-style: none; margin: 0; padding: 0; }
 }
 .glass-static > *, .glass-faux > * { position: relative; z-index: 2; }
 
+/* Just enough shadow to lift the tile off the page — no big linear bevel
+   painted across the face, that's the metal tell. */
 .glass-static {
   box-shadow:
-    inset 0 1px 1px rgba(255, 255, 255, 0.35),
-    inset 0 -10px 16px -10px var(--glass-shadow-bottom),
-    inset 1px 0 0 rgba(255, 190, 130, 0.12),
-    inset -1px 0 0 rgba(140, 190, 255, 0.1),
-    0 2px 6px -2px rgba(0, 0, 0, 0.3),
-    0 20px 44px -18px rgba(0, 0, 0, 0.55);
+    inset 0 1px 0 rgba(255, 255, 255, 0.25),
+    0 3px 10px -4px rgba(0, 0, 0, 0.3),
+    0 16px 36px -18px rgba(0, 0, 0, 0.5);
 }
 .glass-faux {
   box-shadow:
-    inset 0 1px 1px rgba(255, 255, 255, 0.3),
-    inset 0 -8px 14px -10px var(--glass-shadow-bottom),
-    inset 1px 0 0 rgba(255, 190, 130, 0.1),
-    inset -1px 0 0 rgba(140, 190, 255, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
     0 10px 24px -14px rgba(0, 0, 0, 0.35);
 }
 
