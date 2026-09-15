@@ -4,6 +4,7 @@
   const html = document.documentElement;
   const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const pointerFine = window.matchMedia("(pointer: fine)").matches;
+  let applyRefractionState = () => {}; // replaced below if the browser supports it
 
   /* ---------------- Icons ---------------- */
   document.querySelectorAll("[data-icon]").forEach((el) => {
@@ -189,6 +190,7 @@
     html.classList.toggle("is-low-power", on);
     if (persist) localStorage.setItem(LOW_POWER_KEY, on ? "1" : "0");
     lowPowerToggles.forEach((btn) => btn.setAttribute("aria-pressed", String(on)));
+    applyRefractionState();
   }
   setLowPower(localStorage.getItem(LOW_POWER_KEY) === "1", false);
   lowPowerToggles.forEach((btn) => {
@@ -204,12 +206,16 @@
         scrollTicking = true;
         requestAnimationFrame(() => {
           html.classList.add("is-scrolling");
+          applyRefractionState();
           if (galleryTick) galleryTick();
           scrollTicking = false;
         });
       }
       clearTimeout(scrollSettleTimer);
-      scrollSettleTimer = setTimeout(() => html.classList.remove("is-scrolling"), 160);
+      scrollSettleTimer = setTimeout(() => {
+        html.classList.remove("is-scrolling");
+        applyRefractionState();
+      }, 160);
     },
     { passive: true }
   );
@@ -236,6 +242,116 @@
       },
       { once: true, passive: true }
     );
+  }
+
+  /* ---------------- Advanced glass refraction (mini-header, back-to-top) ----------------
+     Adapted (MIT) from nikdelvin/liquid-glass: a per-element SVG
+     displacement map — edges bump/refract via an X/Y gradient rounded-rect
+     bump map — run through three feDisplacementMap passes (one per RGB
+     channel, at slightly different strengths) for real chromatic
+     aberration, applied via `backdrop-filter: url(#displace)`.
+
+     This filters the *real* backdrop, so it's meaningfully more expensive
+     than the plain blur it replaces. It's therefore reserved for the two
+     .glass--blur elements only (never the moving link cards) and switched
+     off outright whenever it would actually cost something: while
+     scrolling — the page behind these fixed elements still changes every
+     frame even though the elements themselves don't move, which is the
+     exact case the project's performance notes warn about — and in
+     Leichter Modus. Both cases fall straight back to the plain CSS blur
+     that's already there (see .glass--blur in styles.css). */
+  const supportsBackdropFilterUrl = (() => {
+    const test = document.createElement("div");
+    test.style.cssText = "backdrop-filter: url(#test)";
+    return test.style.backdropFilter === "url(#test)" || test.style.backdropFilter === 'url("#test")';
+  })();
+
+  if (supportsBackdropFilterUrl && !prefersReducedMotion) {
+    const REFRACTION = { depth: 10, strength: 55, chromaticAberration: 6 };
+
+    function getDisplacementFilter({ width, height, radius, depth, strength, chromaticAberration }) {
+      const map =
+        "data:image/svg+xml;utf8," +
+        encodeURIComponent(`<svg height="${height}" width="${width}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
+          <style>.mix { mix-blend-mode: screen; }</style>
+          <defs>
+            <linearGradient id="Y" x1="0" x2="0" y1="${Math.ceil((radius / height) * 15)}%" y2="${Math.floor(100 - (radius / height) * 15)}%">
+              <stop offset="0%" stop-color="#0F0" /><stop offset="100%" stop-color="#000" />
+            </linearGradient>
+            <linearGradient id="X" x1="${Math.ceil((radius / width) * 15)}%" x2="${Math.floor(100 - (radius / width) * 15)}%" y1="0" y2="0">
+              <stop offset="0%" stop-color="#F00" /><stop offset="100%" stop-color="#000" />
+            </linearGradient>
+          </defs>
+          <rect x="0" y="0" height="${height}" width="${width}" fill="#808080" />
+          <g filter="blur(2px)">
+            <rect x="0" y="0" height="${height}" width="${width}" fill="#000080" />
+            <rect x="0" y="0" height="${height}" width="${width}" fill="url(#Y)" class="mix" />
+            <rect x="0" y="0" height="${height}" width="${width}" fill="url(#X)" class="mix" />
+            <rect x="${depth}" y="${depth}" height="${height - 2 * depth}" width="${width - 2 * depth}" fill="#808080" rx="${radius}" ry="${radius}" filter="blur(${depth}px)" />
+          </g>
+        </svg>`);
+
+      return (
+        "data:image/svg+xml;utf8," +
+        encodeURIComponent(`<svg height="${height}" width="${width}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <filter id="displace" color-interpolation-filters="sRGB">
+              <feImage x="0" y="0" height="${height}" width="${width}" href="${map}" result="displacementMap" />
+              <feDisplacementMap in="SourceGraphic" in2="displacementMap" scale="${strength + chromaticAberration * 2}" xChannelSelector="R" yChannelSelector="G" />
+              <feColorMatrix type="matrix" values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0" result="displacedR" />
+              <feDisplacementMap in="SourceGraphic" in2="displacementMap" scale="${strength + chromaticAberration}" xChannelSelector="R" yChannelSelector="G" />
+              <feColorMatrix type="matrix" values="0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0" result="displacedG" />
+              <feDisplacementMap in="SourceGraphic" in2="displacementMap" scale="${strength}" xChannelSelector="R" yChannelSelector="G" />
+              <feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0" result="displacedB" />
+              <feBlend in="displacedR" in2="displacedG" mode="screen" />
+              <feBlend in2="displacedB" mode="screen" />
+            </filter>
+          </defs>
+        </svg>`) +
+        "#displace"
+      );
+    }
+
+    const refractionEls = Array.from(document.querySelectorAll(".glass--blur"));
+    const refractionCache = new WeakMap();
+
+    function regenerateRefraction() {
+      refractionEls.forEach((el) => {
+        const rect = el.getBoundingClientRect();
+        const width = Math.round(rect.width);
+        const height = Math.round(rect.height);
+        if (!width || !height) return;
+        const radius = parseFloat(getComputedStyle(el).borderRadius) || 0;
+        const filterUrl = getDisplacementFilter({ width, height, radius, ...REFRACTION });
+        refractionCache.set(el, `blur(4px) url('${filterUrl}') blur(20px) brightness(1.05) saturate(1.45)`);
+      });
+    }
+
+    applyRefractionState = () => {
+      const active = !html.classList.contains("is-scrolling") && !html.classList.contains("is-low-power");
+      refractionEls.forEach((el) => {
+        if (active && refractionCache.has(el)) {
+          el.style.setProperty("backdrop-filter", refractionCache.get(el));
+          el.style.setProperty("-webkit-backdrop-filter", refractionCache.get(el));
+        } else {
+          el.style.removeProperty("backdrop-filter");
+          el.style.removeProperty("-webkit-backdrop-filter");
+        }
+      });
+    };
+
+    regenerateRefraction();
+    applyRefractionState();
+    window.addEventListener("resize", () => {
+      regenerateRefraction();
+      applyRefractionState();
+    });
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(() => {
+        regenerateRefraction();
+        applyRefractionState();
+      });
+    }
   }
 
   /* ---------------- Aktuelles feed ---------------- */
