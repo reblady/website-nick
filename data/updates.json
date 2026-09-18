@@ -1,0 +1,20 @@
+[
+  {
+    "date": "2026-09-15",
+    "title": "Platzhalter-Update Nummer eins",
+    "text": "Das ist ein Platzhaltertext für einen Eintrag im Aktuelles-Bereich. Wird später durch echten Inhalt ersetzt.",
+    "link": ""
+  },
+  {
+    "date": "2026-09-02",
+    "title": "Platzhalter-Update Nummer zwei",
+    "text": "Noch ein Platzhaltereintrag, diesmal mit einem Link-Beispiel, damit sich die verlinkte Kartenvariante testen lässt.",
+    "link": "https://example.com"
+  },
+  {
+    "date": "2026-08-20",
+    "title": "Platzhalter-Update Nummer drei",
+    "text": "Ein dritter Platzhalter, damit die Liste beim Design-Review nicht zu kurz wirkt.",
+    "link": ""
+  }
+]

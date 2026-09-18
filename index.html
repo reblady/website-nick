@@ -1,161 +1,158 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Nick Tissen — reblady</title>
-<meta name="description" content="Nick Tissen (@reblady) — Coding-Projekte, YouTube und was sonst noch entsteht.">
-
-<meta property="og:title" content="Nick Tissen — reblady">
-<meta property="og:description" content="Coding-Projekte, YouTube und was sonst noch entsteht.">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nick Tissen</title>
+<meta name="description" content="Nick Tissen — YouTube, Instagram, Discord, GitHub, Steam.">
+<meta name="theme-color" content="#0d0c0a" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f6ead9" media="(prefers-color-scheme: light)">
+<meta property="og:title" content="Nick Tissen">
+<meta property="og:description" content="Nick Tissen — YouTube, Instagram, Discord, GitHub, Steam.">
 <meta property="og:type" content="website">
-<meta property="og:url" content="https://reblady.de/">
-<meta property="og:image" content="assets/og-image.jpg">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
 
-<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<script>
+(function () {
+  var saved = null;
+  try { saved = localStorage.getItem('theme'); } catch (e) {}
+  var theme = saved === 'light' || saved === 'dark'
+    ? saved
+    : (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+  document.documentElement.setAttribute('data-theme', theme);
+})();
+</script>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,600;0,9..144,900;1,9..144,400;1,9..144,500&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
 
 <link rel="stylesheet" href="styles.css">
-
-<!-- theme + low-power flags are resolved before first paint to avoid a flash of the wrong look -->
-<script>
-(function () {
-  try {
-    var stored = localStorage.getItem('reblady-theme');
-    var theme = stored || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-    document.documentElement.setAttribute('data-theme', theme);
-    if (localStorage.getItem('reblady-low-power') === '1') {
-      document.documentElement.classList.add('low-power');
-    }
-  } catch (e) {
-    document.documentElement.setAttribute('data-theme', 'dark');
-  }
-})();
-</script>
 </head>
-<body>
+<body class="intro-locked">
 
-  <!-- ambient background gradient, theme-driven -->
-  <div class="ambient" aria-hidden="true"></div>
+<div class="intro" id="intro">
+  <canvas class="intro__canvas" id="introCanvas" aria-hidden="true"></canvas>
+  <div class="intro__content">
+    <button type="button" class="intro__enter" id="introEnter">
+      <span class="intro__hint">Klicken, um zu starten</span>
+    </button>
+  </div>
+</div>
 
-  <!-- global theme switch, always reachable top right -->
-  <button class="theme-toggle glass glass--refract" id="themeToggle" type="button" aria-label="Theme wechseln">
-    <span class="theme-toggle__track">
-      <span class="theme-toggle__dot"></span>
-    </span>
-  </button>
+<div class="grain" aria-hidden="true"></div>
 
-  <!-- condensed header, fades in once the hero has scrolled away -->
-  <header class="mini-header glass glass--refract" id="miniHeader">
-    <span class="mini-header__name">Nick Tissen</span>
-    <span class="mini-header__handle">@reblady</span>
-  </header>
-
-  <main>
-
-    <!-- HERO / POSTER -->
-    <section class="hero" id="hero">
-      <div class="hero__inner">
-        <h1 class="hero__name load-in load-in--1">
-          <span class="hero__name-line">NICK</span>
-          <span class="hero__name-line">TISSEN</span>
-        </h1>
-
-        <p class="hero__motto load-in load-in--2">Content, Code und was gerade sonst noch entsteht.</p>
-
-        <div class="hero__meta load-in load-in--3">
-          <span class="hero__handle">@reblady</span>
-          <span class="hero__status glass" id="discordStatus" hidden>
-            <span class="hero__status-dot" id="discordStatusDot"></span>
-            <span id="discordStatusText">—</span>
-          </span>
-        </div>
-      </div>
-
-      <div class="hero__scroll-cue" aria-hidden="true">
-        <span>scrollen</span>
-        <div class="hero__scroll-line"></div>
-      </div>
-    </section>
-
-    <!-- PINNED HORIZONTAL LINK GALLERY -->
-    <section class="gallery-pin" id="galleryPin">
-      <div class="gallery-pin__sticky">
-        <div class="gallery-pin__track" id="galleryTrack">
-
-          <a class="link-card link-card--featured glass--faux" href="https://www.youtube.com/@reblady" target="_blank" rel="noopener">
-            <span class="link-card__icon">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-youtube"></use></svg>
-            </span>
-            <span class="link-card__body">
-              <span class="link-card__title">YouTube</span>
-              <span class="link-card__desc">Videos &amp; Projekte — @reblady</span>
-            </span>
-          </a>
-
-          <a class="link-card glass--faux" href="https://instagram.com/nick_tissen" target="_blank" rel="noopener">
-            <span class="link-card__icon">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-instagram"></use></svg>
-            </span>
-            <span class="link-card__body">
-              <span class="link-card__title">Instagram</span>
-              <span class="link-card__desc">@nick_tissen</span>
-            </span>
-          </a>
-
-          <a class="link-card glass--faux" href="#" target="_blank" rel="noopener" id="discordInviteLink">
-            <span class="link-card__icon">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-discord"></use></svg>
-            </span>
-            <span class="link-card__body">
-              <span class="link-card__title">Discord</span>
-              <span class="link-card__desc">.reblady — Community</span>
-            </span>
-          </a>
-
-          <a class="link-card glass--faux" href="https://github.com/reblady" target="_blank" rel="noopener">
-            <span class="link-card__icon">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-github"></use></svg>
-            </span>
-            <span class="link-card__body">
-              <span class="link-card__title">GitHub</span>
-              <span class="link-card__desc">Projects &amp; Code</span>
-            </span>
-          </a>
-
-          <a class="link-card glass--faux" href="https://steamcommunity.com/id/reblady" target="_blank" rel="noopener">
-            <span class="link-card__icon">
-              <svg viewBox="0 0 24 24" aria-hidden="true"><use href="#icon-steam"></use></svg>
-            </span>
-            <span class="link-card__body">
-              <span class="link-card__title">Steam</span>
-              <span class="link-card__desc">reblady</span>
-            </span>
-          </a>
-
-        </div>
-      </div>
-    </section>
-
-  </main>
-
-  <footer class="site-footer">
-    <span class="site-footer__detail">reblady.de</span>
-    <button class="low-power-toggle" type="button" id="lowPowerToggle" aria-pressed="false">Leichter Modus</button>
-  </footer>
-
-  <!-- inline icon sprite: simple original glyphs, not brand logos -->
-  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
-    <symbol id="icon-youtube" viewBox="0 0 24 24"><path d="M4 8.5A3.5 3.5 0 0 1 7.5 5h9A3.5 3.5 0 0 1 20 8.5v7a3.5 3.5 0 0 1-3.5 3.5h-9A3.5 3.5 0 0 1 4 15.5v-7Z" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10.5 9.2v5.6l4.8-2.8-4.8-2.8Z" fill="currentColor"/></symbol>
-    <symbol id="icon-instagram" viewBox="0 0 24 24"><rect x="4.5" y="4.5" width="15" height="15" rx="5" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="12" r="3.4" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="16.2" cy="7.8" r="1" fill="currentColor"/></symbol>
-    <symbol id="icon-discord" viewBox="0 0 24 24"><path d="M6 9.5c0-2.2 1.6-3.9 3.7-4.3.2.4.4.9.5 1.3a10 10 0 0 1 3.6 0c.1-.4.3-.9.5-1.3C16.4 5.6 18 7.3 18 9.5v5.3c0 2-1.9 3.5-4.5 3.9-.3-.4-.5-.9-.7-1.3a7 7 0 0 1-1.6.2 7 7 0 0 1-1.6-.2c-.2.4-.4.9-.7 1.3C6.9 18.3 5 16.8 5 14.8V9.5Z" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="9.7" cy="11.8" r="1.1" fill="currentColor"/><circle cx="14.3" cy="11.8" r="1.1" fill="currentColor"/></symbol>
-    <symbol id="icon-github" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.5" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M9.5 16.2c-2-.6-2.8-1.9-2.8-3.5 0-.8.3-1.5.8-2.1-.1-.4-.3-1.1.1-2 0 0 .7-.2 2.2.8a7.6 7.6 0 0 1 4 0c1.5-1 2.2-.8 2.2-.8.4.9.2 1.6.1 2 .5.6.8 1.3.8 2.1 0 1.6-.8 2.9-2.8 3.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-    <symbol id="icon-steam" viewBox="0 0 24 24"><circle cx="12" cy="12" r="7.5" fill="none" stroke="currentColor" stroke-width="1.5"/><circle cx="14.2" cy="9.8" r="1.9" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M7.5 15.3 10.8 13a2.6 2.6 0 0 1 2.4-2.9M7.5 15.3a1.9 1.9 0 1 0 3.5-1.5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></symbol>
+<button type="button" class="theme-toggle glass-shine" id="themeToggle" aria-label="Theme wechseln">
+  <svg class="theme-toggle__icon theme-toggle__icon--sun" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <circle cx="12" cy="12" r="4.6" stroke="currentColor" stroke-width="1.6"/>
+    <g stroke="currentColor" stroke-width="1.6" stroke-linecap="round">
+      <path d="M12 2.4v2.4"/><path d="M12 19.2v2.4"/>
+      <path d="M4.2 4.2l1.7 1.7"/><path d="M18.1 18.1l1.7 1.7"/>
+      <path d="M2.4 12h2.4"/><path d="M19.2 12h2.4"/>
+      <path d="M4.2 19.8l1.7-1.7"/><path d="M18.1 5.9l1.7-1.7"/>
+    </g>
   </svg>
+  <svg class="theme-toggle__icon theme-toggle__icon--moon" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path d="M20.2 14.6A8.6 8.6 0 1 1 9.4 3.8a7 7 0 0 0 10.8 10.8Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+  </svg>
+</button>
 
-  <script src="script.js" defer></script>
+<header class="mini-header" id="miniHeader">
+  <span class="mini-header__pill glass-shine">NICK&nbsp;TISSEN</span>
+</header>
+
+<main>
+
+  <section class="hero" id="hero">
+    <div class="hero__inner">
+      <p class="hero__handle">@reblady</p>
+      <h1 class="hero__name">NICK<br>TISSEN</h1>
+      <p class="hero__motto">&bdquo;Platzhalter-Motto &mdash; wird noch durch einen echten Satz ersetzt.&ldquo;</p>
+
+      <div class="discord-chip glass-chip" id="discordChip">
+        <span class="discord-chip__dot" data-status="loading"></span>
+        <span class="discord-chip__text" id="discordText">Discord-Status wird geladen&hellip;</span>
+      </div>
+    </div>
+
+    <div class="hero__scrollcue" aria-hidden="true">
+      <span></span>
+      <p>Scroll</p>
+    </div>
+  </section>
+
+  <section class="links-pin" id="linksPin" aria-label="Links">
+    <div class="links-pin__sticky">
+      <div class="links-track" id="linksTrack">
+
+        <a class="link-card link-card--main glass-shine" href="#" data-social="youtube" aria-label="YouTube">
+          <span class="link-card__icon">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M23.5 6.6a3 3 0 0 0-2.1-2.1C19.5 4 12 4 12 4s-7.5 0-9.4.5A3 3 0 0 0 .5 6.6 31 31 0 0 0 0 12a31 31 0 0 0 .5 5.4 3 3 0 0 0 2.1 2.1C4.5 20 12 20 12 20s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1A31 31 0 0 0 24 12a31 31 0 0 0-.5-5.4ZM9.6 15.5v-7L15.8 12Z"/></svg>
+          </span>
+          <span class="link-card__label">
+            <strong>YouTube</strong>
+            <em>Hauptkanal &mdash; Platzhalter</em>
+          </span>
+        </a>
+
+        <a class="link-card glass-shine" href="#" data-social="instagram" aria-label="Instagram">
+          <span class="link-card__icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.2" cy="6.8" r="1"/></svg>
+          </span>
+          <span class="link-card__label">
+            <strong>Instagram</strong>
+            <em>@reblady &mdash; Platzhalter</em>
+          </span>
+        </a>
+
+        <a class="link-card glass-shine" href="#" data-social="discord" aria-label="Discord">
+          <span class="link-card__icon">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.3 5.4A18 18 0 0 0 15.9 4l-.3.6a13 13 0 0 1 3.9 1.5 15 15 0 0 0-12.9 0A13 13 0 0 1 10.4 4l-.3-.6a18 18 0 0 0-4.4 1.4C2.9 9 2.2 12.5 2.5 15.9a18 18 0 0 0 5.5 2.8l.8-1.3a11 11 0 0 1-1.9-.9l.5-.4a13 13 0 0 0 9.2 0l.5.4a11 11 0 0 1-1.9.9l.8 1.3a18 18 0 0 0 5.5-2.8c.4-4-.6-7.4-2.7-10.5ZM9.5 13.9c-.9 0-1.6-.8-1.6-1.9s.7-1.9 1.6-1.9 1.7.9 1.6 1.9c0 1-.7 1.9-1.6 1.9Zm5 0c-.9 0-1.6-.8-1.6-1.9s.7-1.9 1.6-1.9 1.7.9 1.6 1.9c0 1-.7 1.9-1.6 1.9Z"/></svg>
+          </span>
+          <span class="link-card__label">
+            <strong>Discord</strong>
+            <em>Server-Invite &mdash; Platzhalter</em>
+          </span>
+        </a>
+
+        <a class="link-card glass-shine" href="#" data-social="github" aria-label="GitHub">
+          <span class="link-card__icon">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-3.2 19.5c.5.1.7-.2.7-.5v-1.8c-2.8.6-3.4-1.3-3.4-1.3-.4-1.2-1.1-1.5-1.1-1.5-.9-.6.1-.6.1-.6 1 .1 1.5 1 1.5 1 .9 1.6 2.4 1.1 3 .8.1-.7.4-1.1.6-1.4-2.2-.3-4.6-1.1-4.6-5 0-1.1.4-2 1-2.7-.1-.3-.4-1.3.1-2.6 0 0 .8-.3 2.8 1a9.6 9.6 0 0 1 5 0c1.9-1.3 2.8-1 2.8-1 .5 1.3.2 2.3.1 2.6.6.7 1 1.6 1 2.7 0 3.9-2.4 4.7-4.6 5 .3.3.6 1 .6 2v2.9c0 .3.2.6.7.5A10 10 0 0 0 12 2Z"/></svg>
+          </span>
+          <span class="link-card__label">
+            <strong>GitHub</strong>
+            <em>@reblady &mdash; Platzhalter</em>
+          </span>
+        </a>
+
+        <a class="link-card glass-shine" href="#" data-social="steam" aria-label="Steam">
+          <span class="link-card__icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><circle cx="12" cy="12" r="9.3"/><circle cx="8.6" cy="15.2" r="1.8"/><circle cx="15.6" cy="9.2" r="2.4"/><path d="M8.6 15.2 13 11.6"/><path d="M13.7 9.9 17 8.2"/></svg>
+          </span>
+          <span class="link-card__label">
+            <strong>Steam</strong>
+            <em>Profil &mdash; Platzhalter</em>
+          </span>
+        </a>
+
+      </div>
+    </div>
+  </section>
+
+  <section class="updates" id="updates">
+    <h2 class="updates__title">Aktuelles</h2>
+    <div class="updates__list" id="updatesList">
+      <p class="updates__status" id="updatesStatus">Updates werden geladen&hellip;</p>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <p>&copy; <span id="year"></span> Nick Tissen</p>
+</footer>
+
+<script src="script.js" defer></script>
+<script type="module" src="intro.js"></script>
 </body>
 </html>
