@@ -60,7 +60,9 @@ Alles oberhalb beschreibt den **aktuellen** Code (Version 4.1). Die Seite wird k
 - **Abschnitte:** Über mich, Aktuelles (aus `data/updates.json`), Projekte/Gaming.
 - **Plattformen:** Instagram, Discord, GitHub, Steam. YouTube ist vorerst raus und kommt vielleicht später wieder dazu.
 - **Discord:** Der Live-Status über Lanyard bleibt.
-- **Farben:** Dark/Light mit Kreis-Überblendung beim Umschalten war bisher Obsidian Gold / Warm Cloud. Nick ist unsicher, ob das zu Retro passt. Claude soll 2–3 Paletten als Vorschau vorschlagen.
+- **Farben:** Palette „Obsidian Gold, gealtert“, also die bisherigen Farben, nur staubiger und passend zum PS1-Stil. Dark/Light mit Kreis-Überblendung beim Umschalten bleibt.
+  - Dunkel: Himmel `#4a4f57` → `#5a4a35` → `#1a1712`, Berge `#2a2620`, Boden `#100e0b`, Nebel `#3a352c`, Akzent/Objekte `#e0b46a` / `#8a6a3a`, Text `#f4ecdd`, gedämpfter Text `#c9bda6`
+  - Hell: Himmel `#f6ead9` → `#ecc9a2` → `#cf8a63`, Berge `#b6795a`, Boden `#7e4d36`, Nebel `#e9cdb0`, Akzent/Objekte `#a8492a` / `#e08a62`, Text `#2c2117`, gedämpfter Text `#5e4a38`
 - **Mobile:** genauso wichtig wie Desktop. Auch auf dem Handy das volle Erlebnis, nur angepasst.
 - **Performance:** vorerst zweitrangig, die Optik geht vor. Keinen Leichten Modus, keine `prefers-reduced-motion`-Fallbacks und kein Drosseln einbauen. Darum kümmern wir uns gezielt, wenn das Design steht.
 
@@ -72,5 +74,4 @@ Die echten Daten fehlen noch. Platzhalter drin lassen, bis Nick sie liefert, und
 - Alle Social-Links und die `DISCORD_USER_ID`
 - Einträge in `data/updates.json`
 - Details zu den 3D-Elementen
-- Farbpalette (wird aus Claudes Vorschlägen ausgewählt)
 - Eigene Domain
