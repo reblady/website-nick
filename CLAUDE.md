@@ -44,12 +44,33 @@ Ist auch als `reblady-static` in `.claude/launch.json` hinterlegt. `file://` fun
 - Änderungen direkt auf `main` committen und pushen, ohne Branch oder PR (geht sofort live).
 - Commits werden mit Versionsnummern benannt (`4.0`, `3.3`, …), optional mit kurzer Beschreibung dahinter.
 
-## Noch offene Platzhalter
+## Geplanter Neustart (Stand 2026-11-05)
+
+Alles oberhalb beschreibt den **aktuellen** Code (Version 4.1). Die Seite wird komplett neu geschrieben. Dabei nicht auf alten Code, die Git-History oder Backups zurückgreifen. Nach dem Neustart diese Datei an den neuen Code anpassen.
+
+**Richtung:** keine Linktree-Seite mehr, sondern eine immersive Seite im Poster-Stil mit vielen Animationen und kleinen 3D-Elementen.
+
+- **Ablauf:** eine lange Scroll-Story, bei der beim Scrollen nacheinander Szenen kommen.
+- **Retro-Stil:** PS1-Lowpoly-Optik mit dem typischen Texturstil (wackelnde Vertices, verpixelte und verzerrte Texturen, Dithering, niedrige Auflösung).
+- **Glas:** Liquid Glass ähnlich wie bei Apple, oder vergleichbar, solange es zum Gesamtbild passt.
+- **Mischung aus beidem:** Die PS1-Szenen laufen im Hintergrund, darüber liegen scharfe Liquid-Glass-Panels, wie ein modernes Interface über einem alten Spiel. Text und UI bleiben scharf und gut lesbar.
+- **3D-Elemente:** Glas-Objekte, ein Avatar bzw. eine Figur von Nick und Retro-Gegenstände. Nick liefert dazu noch genauere Ideen, also vorher nachfragen.
+- **Intro:** ein Bootscreen wie beim Einschalten einer PS1, mit „Press Start“.
+- **Sound:** dezente Retro- bzw. Konsolen-Sounds, keine Hintergrundmusik.
+- **Abschnitte:** Über mich, Aktuelles (aus `data/updates.json`), Projekte/Gaming.
+- **Plattformen:** Instagram, Discord, GitHub, Steam. YouTube ist vorerst raus und kommt vielleicht später wieder dazu.
+- **Discord:** Der Live-Status über Lanyard bleibt.
+- **Farben:** Dark/Light mit Kreis-Überblendung beim Umschalten war bisher Obsidian Gold / Warm Cloud. Nick ist unsicher, ob das zu Retro passt. Claude soll 2–3 Paletten als Vorschau vorschlagen.
+- **Mobile:** genauso wichtig wie Desktop. Auch auf dem Handy das volle Erlebnis, nur angepasst.
+- **Performance:** vorerst zweitrangig, die Optik geht vor. Keinen Leichten Modus, keine `prefers-reduced-motion`-Fallbacks und kein Drosseln einbauen. Darum kümmern wir uns gezielt, wenn das Design steht.
+
+## Noch offen
 
 Die echten Daten fehlen noch. Platzhalter drin lassen, bis Nick sie liefert, und nichts erfinden.
 
-
-- Motto im Hero (`hero__motto`)
-- Alle Social-Links (`href="#"`) und ihre Untertitel
-- `DISCORD_USER_ID`
+- Motto, Texte für „Über mich“ und „Projekte/Gaming“
+- Alle Social-Links und die `DISCORD_USER_ID`
 - Einträge in `data/updates.json`
+- Details zu den 3D-Elementen
+- Farbpalette (wird aus Claudes Vorschlägen ausgewählt)
+- Eigene Domain
