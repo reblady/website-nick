@@ -1,13 +1,13 @@
 # CLAUDE.md
 
-Persönliche Link-/Profilseite von Nick Tissen (@reblady). Reine statische Seite ohne Build-Schritt, ohne Framework, ohne package.json.
+Persönliche Website von Nick Tissen (@reblady). Eine immersive Seite im Poster-Stil: PS1-Lowpoly-3D-Szenen (Three.js) im Hintergrund, darüber scharfe Liquid-Glass-Panels. Rein statisch, ohne Build-Schritt, ohne package.json.
 
 ## Hosting & Deployment
 
 - GitHub Pages, Branch `main`, Root `/` (legacy build). Jeder Push auf `main` geht direkt live.
 - Aktuell erreichbar unter `reblady.de/website-nick/` (Custom Domain kommt aus dem Repo `reblady/reblady.github.io`). Es gibt hier keine `CNAME`-Datei.
 - Eigene Domain ist noch offen: `nlck.de` war geplant (steht noch in der Repo-Beschreibung), ist aber vergeben. Bis das entschieden ist, keine `CNAME`-Datei anlegen.
-- Weil die Seite unter einem Unterpfad laufen kann, Pfade immer **relativ** halten (`assets/...`, `data/...`), nie mit führendem `/`.
+- Weil die Seite unter einem Unterpfad laufen kann, Pfade immer **relativ** halten (`assets/...`, `js/...`), nie mit führendem `/`.
 
 ## Lokal starten
 
@@ -15,52 +15,63 @@ Persönliche Link-/Profilseite von Nick Tissen (@reblady). Reine statische Seite
 python3 -m http.server 4173
 ```
 
-Ist auch als `reblady-static` in `.claude/launch.json` hinterlegt. `file://` funktioniert nicht, weil `data/updates.json` per `fetch` geladen wird und `intro.js` ein ES-Modul ist.
+Ist auch als `reblady-static` in `.claude/launch.json` hinterlegt. `file://` funktioniert nicht, weil die Skripte ES-Module sind.
 
 ## Dateien
 
-- `index.html` – gesamtes Markup. Ein Inline-Script im `<head>` setzt `data-theme` vor dem ersten Paint (gegen Flackern).
-- `styles.css` – alle Styles. Design-Tokens als CSS-Variablen in `:root`, Farben pro Theme unter `html[data-theme='dark']` / `html[data-theme='light']`. Mobile-Breakpoint: `max-width: 700px`.
-- `script.js` – klassisches Script (`defer`), alle Features als `initXxx()`-Funktionen, gestartet in `DOMContentLoaded`.
-- `intro.js` – ES-Modul, lädt Three.js `0.160.1` von esm.sh und rendert die 3D-Intro-Figur, die winkt.
-- `data/updates.json` – Inhalte für den Bereich „Aktuelles“ (`date` im ISO-Format, `title`, `text`, optional `link`). Neueste zuerst.
-- `assets/` – Favicon (SVG, passt sich dem Farbschema an).
+- `index.html` – Markup: Canvas für die 3D-Bühne, Bootscreen, Kamera-Sucher-Overlay, Steuerknöpfe (Ton, Theme), Hero-Panel und der SVG-Filter für die Glas-Lichtbrechung. Ein Inline-Script im `<head>` setzt `data-theme` vor dem ersten Paint.
+- `styles.css` – alle Styles. Farben als Tokens pro Theme unter `html[data-theme='dark']` / `html[data-theme='light']`. Handy-Layout per `@media (max-aspect-ratio: 105/100)`, passend zur Umschaltung in `restingLayout()` in `main.js`.
+- `js/ps1.js` – PS1-Render-Pipeline: rendert in 240p in ein Render-Target, dann Upscale ohne Filterung mit 4×4-Bayer-Dithering und 15-Bit-Farben, plus Überblendung nach Schwarz/Weiß (`fade`). `ps1Material()` baut Materialien mit Vertex-Snapping (wackelnde Polygone) und affinem Texture-Mapping (verzerrte Texturen). Dazu kleine Helfer für prozedurale Pixel-Texturen.
+- `js/avatar.js` – Nicks Lowpoly-Avatar aus Grundkörpern: dunkelblonde Haare, blaue Augen, weiter Hoodie und weite Jeans. `update(t, wave)` steuert Idle und Winken. Die Farben stehen in `AVATAR_COLORS`.
+- `js/handheld.js` – eigene Handheld-Konsole, PSP-artig, aber ohne echte Marke oder Logos. Ihr Bildschirm zeigt das Foto.
+- `js/sound.js` – Retro-Sounds, komplett per Web Audio synthetisiert. Ob der Ton aus ist, steht in `localStorage` unter `muted`.
+- `js/main.js` – Ablauf, Kamera, Theme-Umschalter, Discord-Status, Glas-Reflex. Die Konfiguration steht oben in der Datei (`DISCORD_USER_ID`, `PALETTES`, `TIMING`).
+- `data/updates.json` – Inhalte für den späteren Bereich „Aktuelles“ (`date` im ISO-Format, `title`, `text`, optional `link`). Wird noch nicht angezeigt.
+- `assets/favicon.svg` – Favicon.
 
-## Wie die Teile zusammenhängen
+## Ablauf der Startsequenz
 
-- **Intro-Gate:** `body.intro-locked` sperrt die Seite, bis geklickt wird. `script.js` ist die einzige Stelle, die das Gate wirklich schließt (`dismissIntro()`). Wenn `intro.js` erfolgreich lädt, meldet es sich über `window.__setIntroEnhanced()` an, lässt die Figur winken und ruft danach `window.dismissIntro()` auf. Schlägt Three.js/WebGL fehl, funktioniert der einfache Klick trotzdem. Diese Fallback-Logik nicht kaputt machen.
-- `dismissIntro` und `getAudioContext` werden von `intro.js` über `window` aufgerufen. Sie müssen deshalb globale Funktionsdeklarationen in `script.js` bleiben (kein Modul, kein IIFE).
-- **Sounds:** werden komplett per Web Audio synthetisiert, es gibt keine Audiodateien. Der Name-Reveal-Sound ist an die CSS-Animation `name-reveal` (1350 ms, Aufsetzpunkt bei 65 %) gekoppelt. Wenn sich die Animation in `styles.css` ändert, die Konstanten in `playNameReveal()` mit anpassen (und umgekehrt).
-- **Theme-Toggle:** kreisförmige Überblendung per View Transitions API mit Fallback. Die Auswahl wird in `localStorage` unter `theme` gespeichert.
-- **Scroll-Effekte:** Der Hero schrumpft beim Scrollen (`--condense`), dann erscheint der Mini-Header. Die Link-Karten werden auf Desktop (`min-width: 701px`) horizontal mitgescrollt, auf Mobile normal gestapelt.
-- **Discord-Status:** wird über die Lanyard-API (`api.lanyard.rest`) jede Minute abgefragt. `DISCORD_USER_ID` oben in `script.js` ist noch ein Platzhalter.
+`boot` → `bootOut` → `world` → `zoom` → `hero` (Phasen in `main.js`, Zeiten in `TIMING`):
+
+1. **Bootscreen:** Ein Gold-Kristall dreht sich, darunter steht „PRESS START“. Erst mit Klick, Tippen oder Enter geht es weiter, denn erst nach dieser Geste dürfen Browser Ton abspielen.
+2. **World:** Der Avatar steht in einer Lowpoly-Landschaft und winkt. Dann erscheint der Kamera-Sucher, es piept zweimal (Fokus) und der Auslöser klickt.
+3. **Foto:** `capturePhoto()` rendert die Szene mit der `photoCamera` (immer 16:9, näherer Ausschnitt) in `photoTarget`. Diese Textur liegt auf dem Bildschirm der Konsole.
+4. **Zoom:** Weißer Blitz. Die Kamera startet so nah, dass der Konsolenbildschirm den ganzen Viewport füllt (`coverDistance`), und zoomt dann heraus, bis die Konsole schwebt (`restingLayout`).
+5. **Hero:** Das Glas-Panel mit Name, Motto und Discord-Chip erscheint, oben rechts die Knöpfe für Ton und Theme.
+
+Wechselt das Theme, wird das Foto in den neuen Farben noch einmal aufgenommen, mit derselben eingefrorenen Pose.
+
+## Stolperfallen
+
+- `THREE.ColorManagement` ist absichtlich aus. Hex-Werte landen 1:1 auf dem Bildschirm, deshalb nichts auf sRGB/linear umstellen.
+- Die Shader-Anpassungen in `ps1Material()` ersetzen `#include`-Zeilen (`project_vertex`, `map_fragment`). Ein String-Replace auf den aufgelösten Chunk-Inhalt greift nicht, weil `onBeforeCompile` die Includes noch nicht aufgelöst hat.
+- Affines Mapping verzerrt große, schräge Flächen stark. Flächen, auf denen ein Bild erkennbar sein muss (z. B. der Konsolenbildschirm), deshalb unterteilen.
+- Flächen, die direkt auf anderen liegen, mit etwas Abstand in z platzieren (≥ 0,005), sonst flackern sie (Z-Fighting).
+- `PALETTES` in `main.js` und die Farb-Tokens in `styles.css` müssen zusammenpassen.
+- Der Bootscreen ist immer dunkel, auch im hellen Theme.
+- Die Lichtbrechung im Glas (`backdrop-filter: url(#liquid)`) funktioniert nur in Chromium. Dafür setzt `main.js` die Klasse `has-refraction`, die anderen Browser bekommen nur Blur.
+- Three.js wird als festes Modul `three@0.160.1` von jsDelivr geladen.
 
 ## Konventionen
 
 - UI-Texte auf Deutsch, Code-Kommentare auf Englisch.
-- Vanilla JS mit `'use strict'`. Keine Abhängigkeiten außer Three.js (CDN) und Google Fonts (Fraunces, Space Grotesk).
-- Neue Farben immer als Token für **beide** Themes anlegen, keine hart codierten Farbwerte in Komponenten.
-- Glas-Optik über die vorhandenen Klassen `glass-shine` / `glass-chip` wiederverwenden.
+- Vanilla JS als ES-Module. Keine Abhängigkeiten außer Three.js (CDN) und Google Fonts (Fraunces, Space Grotesk, VT323).
+- Neue Farben immer als Token für **beide** Themes anlegen, keine hart codierten Farbwerte in Komponenten (Ausnahmen: Bootscreen und Sucher, die immer gleich aussehen).
+- Glas-Optik über die Klasse `glass` wiederverwenden. Radien-Regel: Außenradius = Innenradius + Innenabstand, kleine Elemente als echte Pillen bzw. Kreise.
 - Änderungen direkt auf `main` committen und pushen, ohne Branch oder PR (geht sofort live).
 - Commits werden mit Versionsnummern benannt (`4.0`, `3.3`, …), optional mit kurzer Beschreibung dahinter.
 
-## Geplanter Neustart (Stand 2026-11-05)
+## Design-Richtung
 
-Alles oberhalb beschreibt den **aktuellen** Code (Version 4.1). Die Seite wird komplett neu geschrieben. Dabei nicht auf alten Code, die Git-History oder Backups zurückgreifen. Nach dem Neustart diese Datei an den neuen Code anpassen.
-
-**Richtung:** keine Linktree-Seite mehr, sondern eine immersive Seite im Poster-Stil mit vielen Animationen und kleinen 3D-Elementen.
-
-- **Ablauf:** eine lange Scroll-Story, bei der beim Scrollen nacheinander Szenen kommen.
-- **Retro-Stil:** PS1-Lowpoly-Optik mit dem typischen Texturstil (wackelnde Vertices, verpixelte und verzerrte Texturen, Dithering, niedrige Auflösung).
-- **Glas:** Liquid Glass ähnlich wie bei Apple, oder vergleichbar, solange es zum Gesamtbild passt.
-- **Mischung aus beidem:** Die PS1-Szenen laufen im Hintergrund, darüber liegen scharfe Liquid-Glass-Panels, wie ein modernes Interface über einem alten Spiel. Text und UI bleiben scharf und gut lesbar.
-- **3D-Elemente:** Glas-Objekte, ein Avatar bzw. eine Figur von Nick und Retro-Gegenstände. Nick liefert dazu noch genauere Ideen, also vorher nachfragen.
-- **Intro:** ein Bootscreen wie beim Einschalten einer PS1, mit „Press Start“.
+- **Ablauf:** eine lange Scroll-Story, bei der beim Scrollen nacheinander Szenen kommen. Bisher gibt es nur die Startsequenz, die Seite scrollt noch nicht.
+- **Retro-Stil:** PS1-Lowpoly-Optik mit dem typischen Texturstil.
+- **Glas:** Liquid Glass ähnlich wie bei Apple. Die PS1-Szenen liegen im Hintergrund, darüber scharfe Glas-Panels. Text und UI bleiben gut lesbar.
+- **3D-Elemente:** Glas-Objekte, Nicks Avatar und Retro-Gegenstände (zuerst die Handheld-Konsole, ein DS-artiges Gerät wäre auch denkbar). Der Avatar soll vorerst nur winken, später kommt vielleicht mehr dazu. Wo die Elemente in der Scroll-Story auftauchen, ist noch offen, also vorher fragen.
 - **Sound:** dezente Retro- bzw. Konsolen-Sounds, keine Hintergrundmusik.
-- **Abschnitte:** Über mich, Aktuelles (aus `data/updates.json`), Projekte/Gaming.
+- **Abschnitte (geplant):** Über mich, Aktuelles (aus `data/updates.json`), Projekte/Gaming.
 - **Plattformen:** Instagram, Discord, GitHub, Steam. YouTube ist vorerst raus und kommt vielleicht später wieder dazu.
-- **Discord:** Der Live-Status über Lanyard bleibt.
-- **Farben:** Palette „Obsidian Gold, gealtert“, also die bisherigen Farben, nur staubiger und passend zum PS1-Stil. Dark/Light mit Kreis-Überblendung beim Umschalten bleibt.
+- **Discord:** Live-Status über Lanyard.
+- **Farben:** Palette „Obsidian Gold, gealtert“, Dark/Light mit Kreis-Überblendung beim Umschalten.
   - Dunkel: Himmel `#4a4f57` → `#5a4a35` → `#1a1712`, Berge `#2a2620`, Boden `#100e0b`, Nebel `#3a352c`, Akzent/Objekte `#e0b46a` / `#8a6a3a`, Text `#f4ecdd`, gedämpfter Text `#c9bda6`
   - Hell: Himmel `#f6ead9` → `#ecc9a2` → `#cf8a63`, Berge `#b6795a`, Boden `#7e4d36`, Nebel `#e9cdb0`, Akzent/Objekte `#a8492a` / `#e08a62`, Text `#2c2117`, gedämpfter Text `#5e4a38`
 - **Mobile:** genauso wichtig wie Desktop. Auch auf dem Handy das volle Erlebnis, nur angepasst.
@@ -73,5 +84,6 @@ Die echten Daten fehlen noch. Platzhalter drin lassen, bis Nick sie liefert, und
 - Motto, Texte für „Über mich“ und „Projekte/Gaming“
 - Alle Social-Links und die `DISCORD_USER_ID`
 - Einträge in `data/updates.json`
-- Details zu den 3D-Elementen
+- Farbe des Hoodies (aktuell Schiefergrau, nur geschätzt)
+- Wo die weiteren 3D-Elemente in der Scroll-Story auftauchen
 - Eigene Domain
