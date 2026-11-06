@@ -2,6 +2,7 @@ import { THREE, createPS1, ps1Material, speckle } from './ps1.js';
 import { loadAvatar } from './avatar.js';
 import { createHandheld, SCREEN, BODY_WIDTH } from './handheld.js';
 import * as sound from './sound.js';
+import { initGlint } from './glint.js';
 
 const { sfx } = sound;
 
@@ -495,37 +496,9 @@ window.addEventListener('keydown', (event) => {
   }
 });
 
-// Round spot dithered with a 4×4 Bayer matrix in 3px cells, used as the
-// mask of the glass glint. Drawn at device resolution so the cells stay crisp.
-function createGlintMask() {
-  const cells = 40;
-  const cell = 3 * Math.max(1, Math.round(window.devicePixelRatio || 1));
-  const bayer = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
-  const mask = document.createElement('canvas');
-  mask.width = mask.height = cells * cell;
-  const g = mask.getContext('2d');
-  g.fillStyle = '#000';
-  for (let y = 0; y < cells; y++) {
-    for (let x = 0; x < cells; x++) {
-      const r = Math.hypot(x + 0.5 - cells / 2, y + 0.5 - cells / 2) / (cells / 2);
-      const intensity = r < 1 ? 0.7 * Math.pow(1 - r, 1.5) : 0;
-      if (intensity > (bayer[(y % 4) * 4 + (x % 4)] + 0.5) / 16) g.fillRect(x * cell, y * cell, cell, cell);
-    }
-  }
-  root.style.setProperty('--glint-mask', `url(${mask.toDataURL()})`);
-}
-createGlintMask();
-
 window.addEventListener('pointermove', (event) => {
   pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
   pointer.y = (event.clientY / window.innerHeight) * 2 - 1;
-
-  // Light reflex on the glass follows the cursor, snapped to its 3px grid.
-  for (const el of document.querySelectorAll('.glass')) {
-    const rect = el.getBoundingClientRect();
-    el.style.setProperty('--mx', `${Math.round((event.clientX - rect.left) / 3) * 3}px`);
-    el.style.setProperty('--my', `${Math.round((event.clientY - rect.top) / 3) * 3}px`);
-  }
 
   if (event.pointerType !== 'mouse') return;
   const target = pick(event);
@@ -706,6 +679,8 @@ function initDiscordStatus() {
   fetchDiscordStatus();
   setInterval(fetchDiscordStatus, LANYARD_POLL_MS);
 }
+
+initGlint();
 
 // The SVG refraction filter only works as a backdrop-filter in Chromium.
 if (/Chrome\//.test(navigator.userAgent)) root.classList.add('has-refraction');

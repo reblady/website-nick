@@ -27,6 +27,7 @@ Ist auch als `reblady-static` in `.claude/launch.json` hinterlegt. `file://` fun
 - `js/handheld.js` – lädt die PSP aus `assets/models/psp.glb`, färbt sie über die Materialnamen (`PSP_Shell`, `PSP_Trim`, `PSP_Buttons`, `PSP_Accent` = Theme-Akzent, `PSP_Led`) und legt eine eigene, unterteilte Bildschirm-Fläche mit dem Foto darüber. `SCREEN` (Bildschirmgröße und -tiefe) und `BODY_WIDTH` müssen zum Export passen.
 - `assets/models/psp.glb` – „PlayStation Portable (low poly)“ von Senkinsky (Sketchfab), Lizenz CC BY 4.0. Deshalb steht unten rechts auf der Seite (mobil oben links) ein Credit mit Links, der muss bleiben. Quelle in `assets/models/psp.blend` (Collection „PSP“, Objekt `PSPBody`).
 - `js/sound.js` – Retro-Sounds, komplett per Web Audio synthetisiert. Ob der Ton aus ist, steht in `localStorage` unter `muted`.
+- `js/glint.js` – Lichtraster auf den Glas-Elementen: legt in jedes `.glass` ein Canvas und färbt die Zellen um den Cursor ein.
 - `js/main.js` – Ablauf, Kamera, Theme-Umschalter, Discord-Status, Glas-Reflex. Die Konfiguration steht oben in der Datei (`DISCORD_USER_ID`, `PALETTES`, `TIMING`).
 - `data/updates.json` – Inhalte für den späteren Bereich „Aktuelles“ (`date` im ISO-Format, `title`, `text`, optional `link`). Wird noch nicht angezeigt.
 - `assets/favicon.svg` – Favicon.
@@ -89,7 +90,7 @@ Wechselt das Theme, wird das Foto in den neuen Farben noch einmal aufgenommen, m
 
 - **Ablauf:** eine lange Scroll-Story, bei der beim Scrollen nacheinander Szenen kommen. Bisher gibt es nur die Startsequenz, die Seite scrollt noch nicht.
 - **Retro-Stil:** PS1-Lowpoly-Optik mit dem typischen Texturstil.
-- **Glas:** Liquid Glass ähnlich wie bei Apple, aber mit Retro-Schnitt (Nick hat Variante „B“ gewählt): Pixel-Treppenecken, 2px-Kante mit heller Oberseite, Scanlines, ein dezenter Lichtfleck unter dem Cursor (nur beim Hovern: Akzentfarbe durch eine Bayer-Dither-Maske in 3px-Zellen, die `createGlintMask()` erzeugt), ein Regenbogen-Rand, der sich ruckelnd dreht, und ein harter Pixel-Schatten am Namen. Die PS1-Szenen liegen im Hintergrund, Text und UI bleiben gut lesbar.
+- **Glas:** Liquid Glass ähnlich wie bei Apple, aber mit Retro-Schnitt (Nick hat Variante „B“ gewählt): Pixel-Treppenecken, 2px-Kante mit heller Oberseite, Scanlines, ein festes Raster aus 4px-Zellen (passend zu den Scanlines), das der Cursor in der Akzentfarbe einfärbt: Die Pixel bleiben stehen, nach außen und hinter dem Cursor faden sie in vier harten Stufen aus (Canvas aus `js/glint.js`, nur mit Maus), ein Regenbogen-Rand, der sich ruckelnd dreht, und ein harter Pixel-Schatten am Namen. Die PS1-Szenen liegen im Hintergrund, Text und UI bleiben gut lesbar.
 - **3D-Elemente:** Glas-Objekte, Nicks Avatar und Retro-Gegenstände (zuerst die PSP, ein DS-artiges Gerät wäre auch denkbar). Der Avatar soll vorerst nur winken, später kommt vielleicht mehr dazu. Wo die Elemente in der Scroll-Story auftauchen, ist noch offen, also vorher fragen.
 - **Sound:** dezente Retro- bzw. Konsolen-Sounds, keine Hintergrundmusik.
 - **Abschnitte (geplant):** Über mich, Aktuelles (aus `data/updates.json`), Projekte/Gaming.

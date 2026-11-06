@@ -265,8 +265,8 @@ button {
    Liquid glass, pixel cut — refraction (SVG displacement,
    Chromium only), blur fallback elsewhere, scanlines, a 2px
    bevel rim with a chromatic sheen that turns at a low frame
-   rate, and a dithered light spot that follows the cursor
-   (--mx / --my and --glint-mask set in main.js).
+   rate, and a grid of light cells the cursor tints (canvas
+   from js/glint.js).
 --------------------------------------------------------- */
 
 .glass {
@@ -305,22 +305,13 @@ button {
   pointer-events: none;
 }
 
-/* Accent colour through an ordered-dither (Bayer) mask, only while hovered. */
-.glass::after {
-  content: '';
+.glass__glint {
   position: absolute;
   inset: 0;
   z-index: -1;
-  background: var(--glass-glint);
-  -webkit-mask: var(--glint-mask) calc(var(--mx, 0px) - 60px) calc(var(--my, 0px) - 60px) / 120px 120px no-repeat;
-  mask: var(--glint-mask) calc(var(--mx, 0px) - 60px) calc(var(--my, 0px) - 60px) / 120px 120px no-repeat;
-  opacity: 0;
-  transition: opacity 240ms steps(3);
+  width: 100%;
+  height: 100%;
   pointer-events: none;
-}
-
-.glass:hover::after {
-  opacity: 1;
 }
 
 .glass-button,
