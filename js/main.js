@@ -1,5 +1,5 @@
 import { THREE, createPS1, ps1Material, speckle } from './ps1.js';
-import { createAvatar } from './avatar.js';
+import { loadAvatar } from './avatar.js';
 import { createHandheld, SCREEN } from './handheld.js';
 import * as sound from './sound.js';
 
@@ -42,7 +42,6 @@ const TIMING = {
   bootOut: 0.5,
   sceneFadeIn: 0.8,
   waveAt: 1.1,
-  waveRaise: 0.45,
   viewfinderAt: 2.4,
   focusAt: 2.7,
   shutterAt: 3.6,
@@ -126,8 +125,6 @@ function buildStage(ps1) {
     worldScene.add(peak);
   }
 
-  const avatar = createAvatar(snap);
-  worldScene.add(avatar.root);
   const worldCamera = new THREE.PerspectiveCamera(32, 1, 0.1, 100);
 
   // The photo is always 16:9 to match the handheld's screen.
@@ -191,13 +188,22 @@ function buildStage(ps1) {
   }
   setPalette(palette);
 
-  return {
+  const result = {
     sky, setPalette,
     bootScene, bootCamera, bootCrystal,
-    worldScene, worldCamera, avatar,
+    worldScene, worldCamera, avatar: null,
     photoCamera, photoTarget,
     deviceScene, deviceCamera, handheld, crystals,
   };
+
+  // The avatar model loads while the boot screen is up; the sequence waits
+  // for it before leaving the boot screen.
+  loadAvatar(snap).then((avatar) => {
+    result.avatar = avatar;
+    worldScene.add(avatar.root);
+  }).catch((e) => console.error('Avatar konnte nicht geladen werden', e));
+
+  return result;
 }
 
 /* =========================================================
@@ -276,6 +282,7 @@ const clamp01 = (x) => Math.min(1, Math.max(0, x));
 let phase = 'boot';
 let phaseStart = performance.now();
 let photoTaken = false;
+let lastNow = performance.now();
 const cues = new Set();
 const pointer = { x: 0, y: 0, sx: 0, sy: 0 };
 
@@ -335,6 +342,8 @@ function draw(now) {
   if (!stage) return;
 
   const t = now / 1000;
+  const dt = Math.min(0.1, Math.max(0, (now - lastNow) / 1000));
+  lastNow = now;
   const elapsed = (now - phaseStart) / 1000;
   pointer.sx += (pointer.x - pointer.sx) * 0.06;
   pointer.sy += (pointer.y - pointer.sy) * 0.06;
@@ -347,7 +356,7 @@ function draw(now) {
       ? 1 - clamp01(elapsed / TIMING.bootFadeIn)
       : clamp01(elapsed / TIMING.bootOut);
     ps1.render(stage.bootScene, stage.bootCamera);
-    if (phase === 'bootOut' && elapsed >= TIMING.bootOut) {
+    if (phase === 'bootOut' && elapsed >= TIMING.bootOut && stage.avatar) {
       setPhase('world');
       sfx.boot();
     }
@@ -355,8 +364,8 @@ function draw(now) {
   }
 
   if (phase === 'world') {
-    const wave = clamp01((elapsed - TIMING.waveAt) / TIMING.waveRaise);
-    stage.avatar.update(t, ease(wave));
+    cue('wave', elapsed, TIMING.waveAt, () => stage.avatar.wave());
+    stage.avatar.update(dt);
     ps1.fadeColor.value.set('#000000');
     ps1.fade.value = 1 - clamp01(elapsed / TIMING.sceneFadeIn);
 

@@ -22,19 +22,37 @@ Ist auch als `reblady-static` in `.claude/launch.json` hinterlegt. `file://` fun
 - `index.html` – Markup: Canvas für die 3D-Bühne, Bootscreen, Kamera-Sucher-Overlay, Steuerknöpfe (Ton, Theme), Hero-Panel und der SVG-Filter für die Glas-Lichtbrechung. Ein Inline-Script im `<head>` setzt `data-theme` vor dem ersten Paint.
 - `styles.css` – alle Styles. Farben als Tokens pro Theme unter `html[data-theme='dark']` / `html[data-theme='light']`. Handy-Layout per `@media (max-aspect-ratio: 105/100)`, passend zur Umschaltung in `restingLayout()` in `main.js`.
 - `js/ps1.js` – PS1-Render-Pipeline: rendert in 240p in ein Render-Target, dann Upscale ohne Filterung mit 4×4-Bayer-Dithering und 15-Bit-Farben, plus Überblendung nach Schwarz/Weiß (`fade`). `ps1Material()` baut Materialien mit Vertex-Snapping (wackelnde Polygone) und affinem Texture-Mapping (verzerrte Texturen). Dazu kleine Helfer für prozedurale Pixel-Texturen.
-- `js/avatar.js` – Nicks Lowpoly-Avatar aus Grundkörpern: dunkelblonde Haare, blaue Augen, weiter Hoodie und weite Jeans. `update(t, wave)` steuert Idle und Winken. Die Farben stehen in `AVATAR_COLORS`.
+- `js/avatar.js` – lädt Nicks Avatar aus `assets/models/nick.glb`, ersetzt die Materialien durch `ps1Material` (Textur × Vertex-Farben) und spielt die Clips ab: „Idle“ in Schleife, „Wave“ einmal per `wave()`, danach bleibt der Arm oben.
+- `assets/models/nick.glb` – Avatar-Export aus Blender (realistische Proportionen, dunkelblonde Haare, blaue Augen, olivgrüner Hoodie, Jeans, weiße Sneaker). Die Quelldatei ist `assets/models/nick.blend`, aktuell ist die Collection „NickTripoRig“ (`NickRig3`/`NickBody3`). „NickTripo“ ist die Vorversion mit selbst gebauten Ärmeln, „NickAvatar“ der alte Klötzchen-Avatar. Beide sind ausgeblendet.
 - `js/handheld.js` – eigene Handheld-Konsole, PSP-artig, aber ohne echte Marke oder Logos. Ihr Bildschirm zeigt das Foto.
 - `js/sound.js` – Retro-Sounds, komplett per Web Audio synthetisiert. Ob der Ton aus ist, steht in `localStorage` unter `muted`.
 - `js/main.js` – Ablauf, Kamera, Theme-Umschalter, Discord-Status, Glas-Reflex. Die Konfiguration steht oben in der Datei (`DISCORD_USER_ID`, `PALETTES`, `TIMING`).
 - `data/updates.json` – Inhalte für den späteren Bereich „Aktuelles“ (`date` im ISO-Format, `title`, `text`, optional `link`). Wird noch nicht angezeigt.
 - `assets/favicon.svg` – Favicon.
 
+## 3D-Modelle (Blender)
+
+Modelle entstehen in Blender. Blender MCP ist eingerichtet, Claude kann Blender also direkt steuern.
+
+- Der Avatar ist ein Lowpoly-Mesh aus Tripo (752 Vertices, 1.500 Dreiecke) mit Tripos Auto-Rig: ein Mixamo-Skelett (`mixamorig:*`, 53 Knochen inkl. Finger) mit Gewichten. Texturen gab es keine. In Blender kam dazu:
+  - Flächen per Höhe und Position in Bereiche eingeteilt (Hoodie, Jeans, Schuhe, Sohle, Haut, Gesicht, Haare), jeder Bereich mit eigenem Material. Feinregeln: Handgelenk entlang der Unterarm-Achse geschnitten, gerader Saum (Hoodie nur, wenn alle Vertices z ≥ 0,925), Kapuzen-Innenseite Hoodie, Hinterkopf (z ≥ 1,715, −0,03 < y < 0,095) Haar.
+  - UVs per Box-Projektion mit fester Größe (`cube_size` 0,45), damit alle Stoff-Texturen gleich dicht sind. Das Gesicht bekommt eine Planar-Projektion von vorne auf eine 64×64-Gesichtstextur.
+  - Ambient Occlusion ist in die Vertex-Farbe `AO` gebacken (Cycles) und auf 0,35–1 angehoben, das ergibt die „gemalte“ Schattierung.
+  - Die Arme sind im Mesh seitlich mit dem Oberkörper verschmolzen. Beim Winken zieht der Arm deshalb etwas Hoodie mit, das Mesh bleibt aber geschlossen. Diese Variante war Nick lieber als selbst gebaute Ärmel.
+  - Die Animationen „Idle“ und „Wave“ sind von Hand gekeyt, als Rotationen um Welt-Achsen in den Ruherahmen der Knochen umgerechnet.
+- PS1-Stil: wenige Polygone, kleine Pixel-Texturen (8–64 px) mit Interpolation „Closest“.
+- glTF speichert Vertex-Farben linear. `avatar.js` rechnet sie beim Laden zurück auf sRGB, weil die Bühne ohne Color Management arbeitet.
+- Blickrichtung in Blender ist −Y, Z zeigt nach oben. Der glTF-Export macht daraus +Z vorne und Y oben, also schaut das Modell in Three.js zur Kamera.
+- Export: GLB, nur Rig und Mesh ausgewählt, `export_animation_mode='NLA_TRACKS'` (Tracks dafür kurz entmuten), `export_vertex_color='ACTIVE'`. Im Modus „Actions“ würden auch die Actions der alten Rigs aus der Datei mitkommen.
+- Texturen werden im Code roh gesampelt (`colorSpace = NoColorSpace`, kein Mipmapping), passend zu `ColorManagement.enabled = false`.
+- Three.js-Addons kommen über die Importmap in `index.html` (`three/addons/...`). Deshalb `three` immer per Bare Import einbinden, nicht per URL, sonst landen zwei Instanzen im Browser.
+
 ## Ablauf der Startsequenz
 
 `boot` → `bootOut` → `world` → `zoom` → `hero` (Phasen in `main.js`, Zeiten in `TIMING`):
 
 1. **Bootscreen:** Ein Gold-Kristall dreht sich, darunter steht „PRESS START“. Erst mit Klick, Tippen oder Enter geht es weiter, denn erst nach dieser Geste dürfen Browser Ton abspielen.
-2. **World:** Der Avatar steht in einer Lowpoly-Landschaft und winkt. Dann erscheint der Kamera-Sucher, es piept zweimal (Fokus) und der Auslöser klickt.
+2. **World:** Der Avatar steht in einer Lowpoly-Landschaft und winkt (der Clip „Wave“ startet bei `TIMING.waveAt`). Den Bootscreen verlässt die Seite erst, wenn das Modell geladen ist. Dann erscheint der Kamera-Sucher, es piept zweimal (Fokus) und der Auslöser klickt.
 3. **Foto:** `capturePhoto()` rendert die Szene mit der `photoCamera` (immer 16:9, näherer Ausschnitt) in `photoTarget`. Diese Textur liegt auf dem Bildschirm der Konsole.
 4. **Zoom:** Weißer Blitz. Die Kamera startet so nah, dass der Konsolenbildschirm den ganzen Viewport füllt (`coverDistance`), und zoomt dann heraus, bis die Konsole schwebt (`restingLayout`).
 5. **Hero:** Das Glas-Panel mit Name, Motto und Discord-Chip erscheint, oben rechts die Knöpfe für Ton und Theme.
@@ -50,7 +68,7 @@ Wechselt das Theme, wird das Foto in den neuen Farben noch einmal aufgenommen, m
 - `PALETTES` in `main.js` und die Farb-Tokens in `styles.css` müssen zusammenpassen.
 - Der Bootscreen ist immer dunkel, auch im hellen Theme.
 - Die Lichtbrechung im Glas (`backdrop-filter: url(#liquid)`) funktioniert nur in Chromium. Dafür setzt `main.js` die Klasse `has-refraction`, die anderen Browser bekommen nur Blur.
-- Three.js wird als festes Modul `three@0.160.1` von jsDelivr geladen.
+- Three.js wird als festes Modul `three@0.160.1` von jsDelivr geladen (über die Importmap).
 
 ## Konventionen
 
@@ -84,6 +102,5 @@ Die echten Daten fehlen noch. Platzhalter drin lassen, bis Nick sie liefert, und
 - Motto, Texte für „Über mich“ und „Projekte/Gaming“
 - Alle Social-Links und die `DISCORD_USER_ID`
 - Einträge in `data/updates.json`
-- Farbe des Hoodies (aktuell Schiefergrau, nur geschätzt)
 - Wo die weiteren 3D-Elemente in der Scroll-Story auftauchen
 - Eigene Domain

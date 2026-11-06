@@ -1,4 +1,4 @@
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.1/build/three.module.js';
+import * as THREE from 'three';
 
 export { THREE };
 
@@ -117,10 +117,10 @@ export function createPS1(canvas) {
    GPU's perspective correction.
 --------------------------------------------------------- */
 
-export function ps1Material(snap, { color = 0xffffff, map = null, unlit = false } = {}) {
+export function ps1Material(snap, { color = 0xffffff, map = null, unlit = false, vertexColors = false } = {}) {
   const material = unlit
-    ? new THREE.MeshBasicMaterial({ color, map })
-    : new THREE.MeshLambertMaterial({ color, map, flatShading: true });
+    ? new THREE.MeshBasicMaterial({ color, map, vertexColors })
+    : new THREE.MeshLambertMaterial({ color, map, vertexColors, flatShading: true });
 
   material.onBeforeCompile = (shader) => {
     shader.uniforms.uSnap = snap;
