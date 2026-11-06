@@ -75,7 +75,7 @@ Wechselt das Theme, wird das Foto in den neuen Farben noch einmal aufgenommen, m
 - UI-Texte auf Deutsch, Code-Kommentare auf Englisch.
 - Vanilla JS als ES-Module. Keine Abhängigkeiten außer Three.js (CDN) und Google Fonts (Fraunces, Space Grotesk, VT323).
 - Neue Farben immer als Token für **beide** Themes anlegen, keine hart codierten Farbwerte in Komponenten (Ausnahmen: Bootscreen und Sucher, die immer gleich aussehen).
-- Glas-Optik über die Klasse `glass` wiederverwenden. Radien-Regel: Außenradius = Innenradius + Innenabstand, kleine Elemente als echte Pillen bzw. Kreise.
+- Glas-Optik über die Klasse `glass` wiederverwenden. Glas hat keine runden Ecken, sondern ist per `clip-path` mit Pixel-Treppenecken geschnitten (`--px-shape`, kleine Elemente `--px-shape-sm`). Der Rand ist ein 2px-Ring mit derselben Treppe (`--px-ring`). Weil `clip-path` alles außerhalb abschneidet, funktioniert kein äußerer `box-shadow` auf Glas. Die Polygone sind generiert: Bei einer anderen Stufengröße neu berechnen statt von Hand ändern.
 - Änderungen direkt auf `main` committen und pushen, ohne Branch oder PR (geht sofort live).
 - Commits werden mit Versionsnummern benannt (`4.0`, `3.3`, …), optional mit kurzer Beschreibung dahinter.
 
@@ -83,7 +83,7 @@ Wechselt das Theme, wird das Foto in den neuen Farben noch einmal aufgenommen, m
 
 - **Ablauf:** eine lange Scroll-Story, bei der beim Scrollen nacheinander Szenen kommen. Bisher gibt es nur die Startsequenz, die Seite scrollt noch nicht.
 - **Retro-Stil:** PS1-Lowpoly-Optik mit dem typischen Texturstil.
-- **Glas:** Liquid Glass ähnlich wie bei Apple. Die PS1-Szenen liegen im Hintergrund, darüber scharfe Glas-Panels. Text und UI bleiben gut lesbar.
+- **Glas:** Liquid Glass ähnlich wie bei Apple, aber mit Retro-Schnitt (Nick hat Variante „B“ gewählt): Pixel-Treppenecken, 2px-Kante mit heller Oberseite, Scanlines, ein Lichtreflex in harten Farbstufen, ein Regenbogen-Rand, der sich ruckelnd dreht, und ein harter Pixel-Schatten am Namen. Die PS1-Szenen liegen im Hintergrund, Text und UI bleiben gut lesbar.
 - **3D-Elemente:** Glas-Objekte, Nicks Avatar und Retro-Gegenstände (zuerst die Handheld-Konsole, ein DS-artiges Gerät wäre auch denkbar). Der Avatar soll vorerst nur winken, später kommt vielleicht mehr dazu. Wo die Elemente in der Scroll-Story auftauchen, ist noch offen, also vorher fragen.
 - **Sound:** dezente Retro- bzw. Konsolen-Sounds, keine Hintergrundmusik.
 - **Abschnitte (geplant):** Über mich, Aktuelles (aus `data/updates.json`), Projekte/Gaming.

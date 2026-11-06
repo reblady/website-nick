@@ -13,10 +13,14 @@
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --gutter: clamp(16px, 5vw, 64px);
 
-  /* Radii: outer = inner + padding. */
   --panel-pad: clamp(22px, 3vw, 34px);
-  --panel-inner-radius: 14px;
-  --panel-radius: calc(var(--panel-inner-radius) + var(--panel-pad));
+
+  /* Glass is cut on a pixel grid instead of rounded. Generated: 4px grid,
+     row insets 4/2/1 (small: 3px grid, 2/1); rings are 2px wide. */
+  --px-shape: polygon(0px 12px, 4px 12px, 4px 8px, 8px 8px, 8px 4px, 16px 4px, 16px 0px, calc(100% - 16px) 0px, calc(100% - 16px) 4px, calc(100% - 8px) 4px, calc(100% - 8px) 8px, calc(100% - 4px) 8px, calc(100% - 4px) 12px, 100% 12px, 100% calc(100% - 12px), calc(100% - 4px) calc(100% - 12px), calc(100% - 4px) calc(100% - 8px), calc(100% - 8px) calc(100% - 8px), calc(100% - 8px) calc(100% - 4px), calc(100% - 16px) calc(100% - 4px), calc(100% - 16px) 100%, 16px 100%, 16px calc(100% - 4px), 8px calc(100% - 4px), 8px calc(100% - 8px), 4px calc(100% - 8px), 4px calc(100% - 12px), 0px calc(100% - 12px));
+  --px-ring: polygon(evenodd, 0px 12px, 4px 12px, 4px 8px, 8px 8px, 8px 4px, 16px 4px, 16px 0px, calc(100% - 16px) 0px, calc(100% - 16px) 4px, calc(100% - 8px) 4px, calc(100% - 8px) 8px, calc(100% - 4px) 8px, calc(100% - 4px) 12px, 100% 12px, 100% calc(100% - 12px), calc(100% - 4px) calc(100% - 12px), calc(100% - 4px) calc(100% - 8px), calc(100% - 8px) calc(100% - 8px), calc(100% - 8px) calc(100% - 4px), calc(100% - 16px) calc(100% - 4px), calc(100% - 16px) 100%, 16px 100%, 16px calc(100% - 4px), 8px calc(100% - 4px), 8px calc(100% - 8px), 4px calc(100% - 8px), 4px calc(100% - 12px), 0px calc(100% - 12px), 0px 12px, 2px 14px, 6px 14px, 6px 10px, 10px 10px, 10px 6px, 18px 6px, 18px 2px, calc(100% - 18px) 2px, calc(100% - 18px) 6px, calc(100% - 10px) 6px, calc(100% - 10px) 10px, calc(100% - 6px) 10px, calc(100% - 6px) 14px, calc(100% - 2px) 14px, calc(100% - 2px) calc(100% - 14px), calc(100% - 6px) calc(100% - 14px), calc(100% - 6px) calc(100% - 10px), calc(100% - 10px) calc(100% - 10px), calc(100% - 10px) calc(100% - 6px), calc(100% - 18px) calc(100% - 6px), calc(100% - 18px) calc(100% - 2px), 18px calc(100% - 2px), 18px calc(100% - 6px), 10px calc(100% - 6px), 10px calc(100% - 10px), 6px calc(100% - 10px), 6px calc(100% - 14px), 2px calc(100% - 14px), 2px 14px);
+  --px-shape-sm: polygon(0px 6px, 3px 6px, 3px 3px, 6px 3px, 6px 0px, calc(100% - 6px) 0px, calc(100% - 6px) 3px, calc(100% - 3px) 3px, calc(100% - 3px) 6px, 100% 6px, 100% calc(100% - 6px), calc(100% - 3px) calc(100% - 6px), calc(100% - 3px) calc(100% - 3px), calc(100% - 6px) calc(100% - 3px), calc(100% - 6px) 100%, 6px 100%, 6px calc(100% - 3px), 3px calc(100% - 3px), 3px calc(100% - 6px), 0px calc(100% - 6px));
+  --px-ring-sm: polygon(evenodd, 0px 6px, 3px 6px, 3px 3px, 6px 3px, 6px 0px, calc(100% - 6px) 0px, calc(100% - 6px) 3px, calc(100% - 3px) 3px, calc(100% - 3px) 6px, 100% 6px, 100% calc(100% - 6px), calc(100% - 3px) calc(100% - 6px), calc(100% - 3px) calc(100% - 3px), calc(100% - 6px) calc(100% - 3px), calc(100% - 6px) 100%, 6px 100%, 6px calc(100% - 3px), 3px calc(100% - 3px), 3px calc(100% - 6px), 0px calc(100% - 6px), 0px 6px, 2px 8px, 5px 8px, 5px 5px, 8px 5px, 8px 2px, calc(100% - 8px) 2px, calc(100% - 8px) 5px, calc(100% - 5px) 5px, calc(100% - 5px) 8px, calc(100% - 2px) 8px, calc(100% - 2px) calc(100% - 8px), calc(100% - 5px) calc(100% - 8px), calc(100% - 5px) calc(100% - 5px), calc(100% - 8px) calc(100% - 5px), calc(100% - 8px) calc(100% - 2px), 8px calc(100% - 2px), 8px calc(100% - 5px), 5px calc(100% - 5px), 5px calc(100% - 8px), 2px calc(100% - 8px), 2px 8px);
 }
 
 html[data-theme='dark'] {
@@ -32,8 +36,8 @@ html[data-theme='dark'] {
   --glass-top: rgba(255, 244, 222, 0.1);
   --glass-bottom: rgba(40, 34, 26, 0.24);
   --glass-rim-top: rgba(255, 246, 228, 0.5);
-  --glass-rim-bottom: rgba(255, 246, 228, 0.08);
-  --glass-shadow: 0 24px 60px rgba(8, 6, 4, 0.45);
+  --glass-shadow-edge: rgba(8, 6, 4, 0.55);
+  --scanline: rgba(0, 0, 0, 0.09);
   --glass-glint: rgba(255, 240, 210, 0.22);
 
   --status-online: #57c785;
@@ -55,8 +59,8 @@ html[data-theme='light'] {
   --glass-top: rgba(255, 252, 245, 0.42);
   --glass-bottom: rgba(255, 238, 215, 0.16);
   --glass-rim-top: rgba(255, 255, 255, 0.85);
-  --glass-rim-bottom: rgba(255, 255, 255, 0.2);
-  --glass-shadow: 0 22px 50px rgba(110, 60, 30, 0.2);
+  --glass-shadow-edge: rgba(110, 60, 30, 0.28);
+  --scanline: rgba(110, 60, 30, 0.06);
   --glass-glint: rgba(255, 255, 255, 0.4);
 
   --status-online: #2f9e5c;
@@ -258,21 +262,22 @@ button {
 }
 
 /* ---------------------------------------------------------
-   Liquid glass — refraction (SVG displacement, Chromium only),
-   blur fallback elsewhere, a chromatic rim and a light reflex
-   that follows the cursor (--mx / --my set in main.js).
+   Liquid glass, pixel cut — refraction (SVG displacement,
+   Chromium only), blur fallback elsewhere, scanlines, a 2px
+   bevel rim with a chromatic sheen that turns at a low frame
+   rate, and a posterised light reflex that follows the cursor
+   (--mx / --my set in main.js).
 --------------------------------------------------------- */
 
 .glass {
   position: relative;
   isolation: isolate;
-  background: linear-gradient(160deg, var(--glass-top), var(--glass-bottom));
+  clip-path: var(--px-shape);
+  background:
+    repeating-linear-gradient(180deg, var(--scanline) 0 1px, transparent 1px 4px),
+    linear-gradient(160deg, var(--glass-top), var(--glass-bottom));
   -webkit-backdrop-filter: blur(14px) saturate(170%);
   backdrop-filter: blur(14px) saturate(170%);
-  box-shadow:
-    inset 0 1px 0 var(--glass-rim-top),
-    inset 0 -1px 0 var(--glass-rim-bottom),
-    var(--glass-shadow);
 }
 
 .has-refraction .glass {
@@ -284,33 +289,46 @@ button {
   position: absolute;
   inset: 0;
   z-index: -1;
-  border-radius: inherit;
-  padding: 1.2px;
-  background: conic-gradient(
-    from var(--rim-angle),
-    rgba(255, 140, 120, 0.55),
-    rgba(255, 220, 140, 0.65),
-    rgba(140, 240, 200, 0.5),
-    rgba(130, 180, 255, 0.6),
-    rgba(220, 150, 255, 0.5),
-    rgba(255, 140, 120, 0.55)
-  );
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
-  -webkit-mask-composite: xor;
-  mask-composite: exclude;
-  opacity: 0.6;
-  animation: rim-spin 9s linear infinite;
+  clip-path: var(--px-ring);
+  background:
+    linear-gradient(180deg, var(--glass-rim-top), transparent 45%, var(--glass-shadow-edge)),
+    conic-gradient(
+      from var(--rim-angle),
+      rgba(255, 140, 120, 0.4),
+      rgba(255, 220, 140, 0.5),
+      rgba(140, 240, 200, 0.35),
+      rgba(130, 180, 255, 0.45),
+      rgba(220, 150, 255, 0.35),
+      rgba(255, 140, 120, 0.4)
+    );
+  animation: rim-spin 9s steps(24) infinite;
   pointer-events: none;
 }
 
+/* Banded like 15-bit colour instead of a smooth falloff. */
 .glass::after {
   content: '';
   position: absolute;
   inset: 0;
   z-index: -1;
-  border-radius: inherit;
-  background: radial-gradient(circle 220px at var(--mx, 20%) var(--my, 0%), var(--glass-glint), transparent 70%);
+  background: radial-gradient(
+    circle 240px at var(--mx, 20%) var(--my, 0%),
+    var(--glass-glint) 0 20%,
+    color-mix(in srgb, var(--glass-glint) 55%, transparent) 20% 42%,
+    color-mix(in srgb, var(--glass-glint) 25%, transparent) 42% 66%,
+    transparent 66%
+  );
   pointer-events: none;
+}
+
+.glass-button,
+.chip {
+  clip-path: var(--px-shape-sm);
+}
+
+.glass-button::before,
+.chip::before {
+  clip-path: var(--px-ring-sm);
 }
 
 @keyframes rim-spin {
@@ -341,7 +359,6 @@ button {
 .glass-button {
   width: 46px;
   height: 46px;
-  border-radius: 50%;
   display: grid;
   place-items: center;
   transition: transform 200ms var(--ease-out);
@@ -413,7 +430,6 @@ html[data-theme='dark'] .icon--moon {
 .panel {
   width: min(32rem, 46vw);
   padding: var(--panel-pad);
-  border-radius: var(--panel-radius);
   pointer-events: auto;
   opacity: 0;
   transform: translateY(24px) scale(0.97);
@@ -451,6 +467,7 @@ html[data-theme='dark'] .icon--moon {
   font-size: clamp(3.2rem, 7.5vw, 6.4rem);
   line-height: 0.88;
   letter-spacing: -0.01em;
+  text-shadow: 4px 4px 0 var(--glass-shadow-edge);
 }
 
 .panel__motto {
@@ -467,19 +484,18 @@ html[data-theme='dark'] .icon--moon {
   align-items: center;
   gap: 9px;
   padding: 8px 14px;
-  border-radius: 999px;
-  font-size: 14px;
-  font-weight: 500;
+  font-family: var(--font-pixel);
+  font-size: 19px;
+  letter-spacing: 0.02em;
 }
 
 .chip__dot {
   width: 9px;
   height: 9px;
-  border-radius: 50%;
   background: var(--status-offline);
 }
 
-.chip__dot[data-status='online'] { background: var(--status-online); box-shadow: 0 0 0 3px color-mix(in srgb, var(--status-online) 30%, transparent); }
+.chip__dot[data-status='online'] { background: var(--status-online); }
 .chip__dot[data-status='idle'] { background: var(--status-idle); }
 .chip__dot[data-status='dnd'] { background: var(--status-dnd); }
 
