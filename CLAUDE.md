@@ -25,7 +25,7 @@ Ist auch als `reblady-static` in `.claude/launch.json` hinterlegt. `file://` fun
 - `js/avatar.js` – lädt Nicks Avatar aus `assets/models/nick.glb`, ersetzt die Materialien durch `ps1Material` (Textur × Vertex-Farben) und spielt die Clips ab: „Idle“ in Schleife, „Wave“ einmal per `wave()`, danach bleibt der Arm oben.
 - `assets/models/nick.glb` – Avatar-Export aus Blender (realistische Proportionen, dunkelblonde Haare, blaue Augen, olivgrüner Hoodie, Jeans, weiße Sneaker). Die Quelldatei ist `assets/models/nick.blend`, aktuell ist die Collection „NickTripoRig“ (`NickRig3`/`NickBody3`). „NickTripo“ ist die Vorversion mit selbst gebauten Ärmeln, „NickAvatar“ der alte Klötzchen-Avatar. Beide sind ausgeblendet.
 - `js/handheld.js` – lädt die PSP aus `assets/models/psp.glb`, färbt sie über die Materialnamen (`PSP_Shell`, `PSP_Trim`, `PSP_Buttons`, `PSP_Accent` = Theme-Akzent, `PSP_Led`) und legt eine eigene, unterteilte Bildschirm-Fläche mit dem Foto darüber. `SCREEN` (Bildschirmgröße und -tiefe) und `BODY_WIDTH` müssen zum Export passen.
-- `assets/models/psp.glb` – „PlayStation Portable (low poly)“ von Senkinsky (Sketchfab), Lizenz CC BY 4.0. Deshalb steht unten rechts auf der Seite (mobil oben links) ein Credit mit Links, der muss bleiben. Quelle in `assets/models/psp.blend` (Collection „PSP“, Objekt `PSPBody`).
+- `assets/models/psp.glb` – „PlayStation Portable (low poly)“ von Senkinsky (Sketchfab), Lizenz CC BY 4.0. Deshalb steht unten rechts auf der Seite (mobil unter dem Panel) ein Credit mit Links, der muss bleiben. Quelle in `assets/models/psp.blend` (Collection „PSP“, Objekt `PSPBody`).
 - `js/sound.js` – Retro-Sounds, komplett per Web Audio synthetisiert. Ob der Ton aus ist, steht in `localStorage` unter `muted`.
 - `js/glint.js` – Lichtraster auf den Glas-Elementen: legt in jedes `.glass` ein Canvas und färbt die Zellen um den Cursor ein.
 - `js/main.js` – Ablauf, Kamera, Theme-Umschalter, Discord-Status, Glas-Reflex. Die Konfiguration steht oben in der Datei (`DISCORD_USER_ID`, `PALETTES`, `TIMING`).
@@ -61,6 +61,7 @@ Modelle entstehen in Blender. Blender MCP ist eingerichtet, Claude kann Blender 
 5. **Hero:** Das Glas-Panel mit Name, Motto und Discord-Chip erscheint, oben rechts die Knöpfe für Ton und Theme. Der Hintergrund ist jetzt interaktiv (nur in dieser Phase und nur direkt auf dem Canvas, `pick()` in `main.js`):
    - Fährt die Maus über einen Kristall, leuchtet er auf, wird größer und dreht sich schneller.
    - Ein Klick oder Tipp lässt ihn in Splitter zerspringen. 2,5–4,5 s später wächst er an einer neuen Stelle nach.
+   - Oben links zählt ein kleiner Glas-Zähler die zerschlagenen Kristalle (dreistellig, max. 999). Der Stand bleibt wie ein Highscore über Besuche erhalten (`localStorage` `crystals`).
    - Ein Klick auf die PSP dreht sie einmal mit einem kleinen Hüpfer.
    - Die Kristall-Positionen sind relativ zum sichtbaren Bereich gespeichert (`nx`/`ny`), damit sie sich auf jedem Bildschirmformat verteilen.
 

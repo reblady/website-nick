@@ -516,11 +516,23 @@ window.addEventListener('pointermove', (event) => {
 ========================================================= */
 
 const SHARD_LIFE = 1.1;
+const counter = document.querySelector('.counter');
+const counterValue = document.getElementById('crystalCount');
 const SHARD_GEOMETRY = new THREE.TetrahedronGeometry(1);
 const raycaster = new THREE.Raycaster();
 const ndc = new THREE.Vector2();
 let hovered = null;
 let handheldSpinAt = -Infinity;
+
+// Shattered crystals, kept across visits like a high score.
+let shattered = 0;
+try { shattered = Number(localStorage.getItem('crystals')) || 0; } catch (e) {}
+
+function showCount() {
+  counterValue.textContent = String(Math.min(shattered, 999)).padStart(3, '0');
+  counter.setAttribute('aria-label', `Zerschlagene Kristalle: ${shattered}`);
+}
+showCount();
 
 // The crystal or the handheld under the pointer, or null. Only on the bare
 // canvas, so clicks on the panel and buttons never reach the scene.
@@ -564,6 +576,14 @@ function shatter(crystal) {
     stage.shards.push(shard);
   }
   sfx.shatter();
+
+  shattered++;
+  try { localStorage.setItem('crystals', String(shattered)); } catch (e) {}
+  showCount();
+  // Restart the bump animation.
+  counter.classList.remove('is-bump');
+  void counter.offsetWidth;
+  counter.classList.add('is-bump');
 }
 
 canvas.addEventListener('pointerdown', (event) => {
