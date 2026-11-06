@@ -38,7 +38,7 @@ html[data-theme='dark'] {
   --glass-rim-top: rgba(255, 246, 228, 0.5);
   --glass-shadow-edge: rgba(8, 6, 4, 0.55);
   --scanline: rgba(0, 0, 0, 0.09);
-  --glass-glint: rgba(255, 240, 210, 0.22);
+  --glass-glint: rgba(224, 180, 106, 0.5);
 
   --status-online: #57c785;
   --status-idle: #e3b34d;
@@ -61,7 +61,7 @@ html[data-theme='light'] {
   --glass-rim-top: rgba(255, 255, 255, 0.85);
   --glass-shadow-edge: rgba(110, 60, 30, 0.28);
   --scanline: rgba(110, 60, 30, 0.06);
-  --glass-glint: rgba(255, 255, 255, 0.4);
+  --glass-glint: rgba(168, 73, 42, 0.32);
 
   --status-online: #2f9e5c;
   --status-idle: #c98a1f;
@@ -265,8 +265,8 @@ button {
    Liquid glass, pixel cut — refraction (SVG displacement,
    Chromium only), blur fallback elsewhere, scanlines, a 2px
    bevel rim with a chromatic sheen that turns at a low frame
-   rate, and a posterised light reflex that follows the cursor
-   (--mx / --my set in main.js).
+   rate, and a dithered light spot that follows the cursor
+   (--mx / --my and --glint-mask set in main.js).
 --------------------------------------------------------- */
 
 .glass {
@@ -305,20 +305,22 @@ button {
   pointer-events: none;
 }
 
-/* Banded like 15-bit colour instead of a smooth falloff. */
+/* Accent colour through an ordered-dither (Bayer) mask, only while hovered. */
 .glass::after {
   content: '';
   position: absolute;
   inset: 0;
   z-index: -1;
-  background: radial-gradient(
-    circle 240px at var(--mx, 20%) var(--my, 0%),
-    var(--glass-glint) 0 20%,
-    color-mix(in srgb, var(--glass-glint) 55%, transparent) 20% 42%,
-    color-mix(in srgb, var(--glass-glint) 25%, transparent) 42% 66%,
-    transparent 66%
-  );
+  background: var(--glass-glint);
+  -webkit-mask: var(--glint-mask) calc(var(--mx, 0px) - 60px) calc(var(--my, 0px) - 60px) / 120px 120px no-repeat;
+  mask: var(--glint-mask) calc(var(--mx, 0px) - 60px) calc(var(--my, 0px) - 60px) / 120px 120px no-repeat;
+  opacity: 0;
+  transition: opacity 240ms steps(3);
   pointer-events: none;
+}
+
+.glass:hover::after {
+  opacity: 1;
 }
 
 .glass-button,

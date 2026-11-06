@@ -150,14 +150,21 @@ function buildStage(ps1) {
   deviceScene.add(handheld.group);
 
   const crystalMats = [ps1Material(snap, { color: palette.accent }), ps1Material(snap, { color: palette.accent2 })];
+  // Lights up the crystal under the cursor.
+  const crystalHot = ps1Material(snap, { color: palette.sun });
   const crystals = [];
   for (let i = 0; i < 9; i++) {
     const crystal = new THREE.Mesh(new THREE.OctahedronGeometry(1), crystalMats[i % 2]);
-    crystal.position.set((Math.random() * 2 - 1) * 5, (Math.random() * 2 - 1) * 2.6, -1.5 - Math.random() * 6);
-    crystal.scale.setScalar(0.12 + Math.random() * 0.28);
-    crystal.userData.spin = 0.3 + Math.random() * 0.8;
-    crystal.userData.bob = Math.random() * Math.PI * 2;
-    crystal.userData.baseY = crystal.position.y;
+    crystal.userData = {
+      material: crystal.material,
+      spin: 0.3 + Math.random() * 0.8,
+      bob: Math.random() * Math.PI * 2,
+      angle: 0,
+      current: 0,
+      gone: false,
+      respawnAt: 0,
+    };
+    placeCrystal(crystal);
     deviceScene.add(crystal);
     crystals.push(crystal);
   }
@@ -184,6 +191,7 @@ function buildStage(ps1) {
     mountainMat.color.set(p.mountain);
     crystalMats[0].color.set(p.accent);
     crystalMats[1].color.set(p.accent2);
+    crystalHot.color.set(p.sun);
     handheld.setAccent(p.accent);
   }
   setPalette(palette);
@@ -193,7 +201,7 @@ function buildStage(ps1) {
     bootScene, bootCamera, bootCrystal,
     worldScene, worldCamera, avatar: null,
     photoCamera, photoTarget,
-    deviceScene, deviceCamera, handheld, handheldLoaded: false, crystals,
+    deviceScene, deviceCamera, handheld, handheldLoaded: false, crystals, crystalHot, shards: [],
   };
 
   // Both models load while the boot screen is up; the sequence waits for
@@ -207,6 +215,16 @@ function buildStage(ps1) {
   }).catch((e) => console.error('Handheld konnte nicht geladen werden', e));
 
   return result;
+}
+
+// Random spot behind the handheld, random size. x/y are stored relative to
+// the visible area (−1…1) so the crystals spread over any screen shape.
+function placeCrystal(crystal) {
+  const d = crystal.userData;
+  d.nx = (Math.random() * 2 - 1) * 0.95;
+  d.ny = (Math.random() * 2 - 1) * 0.9;
+  d.z = -1.5 - Math.random() * 6;
+  d.size = 0.12 + Math.random() * 0.28;
 }
 
 /* =========================================================
@@ -240,9 +258,12 @@ function coverDistance(camera) {
   return Math.min(byHeight, byWidth);
 }
 
+// Camera distance once the zoom is done.
+const REST_DISTANCE = 4;
+
 // Where the handheld rests once the zoom is done.
 function restingLayout(camera) {
-  const distance = 4;
+  const distance = REST_DISTANCE;
   const visibleHeight = 2 * distance * halfTan(camera.fov);
   const visibleWidth = visibleHeight * camera.aspect;
   if (camera.aspect > 1.05) {
@@ -286,6 +307,7 @@ let phase = 'boot';
 let phaseStart = performance.now();
 let photoTaken = false;
 let lastNow = performance.now();
+let clock = 0;
 const cues = new Set();
 const pointer = { x: 0, y: 0, sx: 0, sy: 0 };
 
@@ -323,16 +345,56 @@ function placeDevice(progress, t) {
   group.rotation.x += pointer.sy * 0.12 * progress;
   group.rotation.y += pointer.sx * 0.18 * progress;
 
+  // One full turn with a little hop after a click.
+  const spin = clamp01((t - handheldSpinAt) / 0.9);
+  if (spin < 1) {
+    group.rotation.y += ease(spin) * Math.PI * 2;
+    group.position.y += Math.sin(spin * Math.PI) * 0.15;
+  }
+
   // Exponential so the zoom out feels even instead of rushing at the start.
   deviceCamera.position.set(0, 0, start * Math.pow(rest.distance / start, progress));
   deviceCamera.lookAt(0, 0, 0);
 }
 
-function animateCrystals(t) {
+function animateCrystals(t, dt) {
   for (const crystal of stage.crystals) {
-    crystal.rotation.y = t * crystal.userData.spin;
-    crystal.rotation.x = t * crystal.userData.spin * 0.6;
-    crystal.position.y = crystal.userData.baseY + Math.sin(t * 0.8 + crystal.userData.bob) * 0.15;
+    const d = crystal.userData;
+    const isHovered = hovered === crystal;
+    if (d.gone && t >= d.respawnAt) {
+      placeCrystal(crystal);
+      d.gone = false;
+    }
+    d.angle += dt * d.spin * (isHovered ? 5 : 1);
+    crystal.rotation.y = d.angle;
+    crystal.rotation.x = d.angle * 0.6;
+    const reach = (REST_DISTANCE - d.z) * halfTan(stage.deviceCamera.fov);
+    crystal.position.set(
+      d.nx * reach * stage.deviceCamera.aspect,
+      d.ny * reach + Math.sin(t * 0.8 + d.bob) * 0.15,
+      d.z
+    );
+    // Grows in on load and after a respawn, swells while hovered.
+    const target = d.gone ? 0 : d.size * (isHovered ? 1.3 : 1);
+    d.current += (target - d.current) * Math.min(1, dt * 10);
+    crystal.scale.setScalar(d.current);
+    crystal.visible = d.current > 0.005;
+    crystal.material = isHovered ? stage.crystalHot : d.material;
+  }
+
+  for (let i = stage.shards.length - 1; i >= 0; i--) {
+    const shard = stage.shards[i];
+    const d = shard.userData;
+    d.life += dt;
+    d.velocity.y -= 5 * dt;
+    shard.position.addScaledVector(d.velocity, dt);
+    shard.rotation.x += d.spin.x * dt;
+    shard.rotation.y += d.spin.y * dt;
+    shard.scale.setScalar(d.size * Math.max(0, 1 - d.life / SHARD_LIFE));
+    if (d.life >= SHARD_LIFE) {
+      stage.deviceScene.remove(shard);
+      stage.shards.splice(i, 1);
+    }
   }
 }
 
@@ -348,6 +410,7 @@ function draw(now) {
   const dt = Math.min(0.1, Math.max(0, (now - lastNow) / 1000));
   lastNow = now;
   const elapsed = (now - phaseStart) / 1000;
+  clock = t;
   pointer.sx += (pointer.x - pointer.sx) * 0.06;
   pointer.sy += (pointer.y - pointer.sy) * 0.06;
 
@@ -400,7 +463,7 @@ function draw(now) {
   ps1.fadeColor.value.set('#ffffff');
   ps1.fade.value = phase === 'zoom' ? 1 - clamp01(elapsed / TIMING.flash) : 0;
   placeDevice(progress, t);
-  animateCrystals(t);
+  animateCrystals(t, dt);
   ps1.render(stage.deviceScene, stage.deviceCamera);
 }
 requestAnimationFrame(frame);
@@ -432,17 +495,117 @@ window.addEventListener('keydown', (event) => {
   }
 });
 
+// Round spot dithered with a 4×4 Bayer matrix in 3px cells, used as the
+// mask of the glass glint. Drawn at device resolution so the cells stay crisp.
+function createGlintMask() {
+  const cells = 40;
+  const cell = 3 * Math.max(1, Math.round(window.devicePixelRatio || 1));
+  const bayer = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+  const mask = document.createElement('canvas');
+  mask.width = mask.height = cells * cell;
+  const g = mask.getContext('2d');
+  g.fillStyle = '#000';
+  for (let y = 0; y < cells; y++) {
+    for (let x = 0; x < cells; x++) {
+      const r = Math.hypot(x + 0.5 - cells / 2, y + 0.5 - cells / 2) / (cells / 2);
+      const intensity = r < 1 ? 0.7 * Math.pow(1 - r, 1.5) : 0;
+      if (intensity > (bayer[(y % 4) * 4 + (x % 4)] + 0.5) / 16) g.fillRect(x * cell, y * cell, cell, cell);
+    }
+  }
+  root.style.setProperty('--glint-mask', `url(${mask.toDataURL()})`);
+}
+createGlintMask();
+
 window.addEventListener('pointermove', (event) => {
   pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
   pointer.y = (event.clientY / window.innerHeight) * 2 - 1;
 
-  // Light reflex on the glass follows the cursor.
+  // Light reflex on the glass follows the cursor, snapped to its 3px grid.
   for (const el of document.querySelectorAll('.glass')) {
     const rect = el.getBoundingClientRect();
-    el.style.setProperty('--mx', `${event.clientX - rect.left}px`);
-    el.style.setProperty('--my', `${event.clientY - rect.top}px`);
+    el.style.setProperty('--mx', `${Math.round((event.clientX - rect.left) / 3) * 3}px`);
+    el.style.setProperty('--my', `${Math.round((event.clientY - rect.top) / 3) * 3}px`);
+  }
+
+  if (event.pointerType !== 'mouse') return;
+  const target = pick(event);
+  if (target !== hovered) {
+    hovered = target;
+    canvas.style.cursor = target ? 'pointer' : '';
+    if (target) sfx.hover();
   }
 }, { passive: true });
+
+/* =========================================================
+   Background objects — hover a crystal and it lights up and
+   spins faster, click it and it shatters (it grows back a
+   moment later somewhere else). Clicking the handheld spins it.
+========================================================= */
+
+const SHARD_LIFE = 1.1;
+const SHARD_GEOMETRY = new THREE.TetrahedronGeometry(1);
+const raycaster = new THREE.Raycaster();
+const ndc = new THREE.Vector2();
+let hovered = null;
+let handheldSpinAt = -Infinity;
+
+// The crystal or the handheld under the pointer, or null. Only on the bare
+// canvas, so clicks on the panel and buttons never reach the scene.
+function pick(event) {
+  if (!stage || phase !== 'hero' || event.target !== canvas) return null;
+  ndc.set((event.clientX / window.innerWidth) * 2 - 1, -(event.clientY / window.innerHeight) * 2 + 1);
+  raycaster.setFromCamera(ndc, stage.deviceCamera);
+  const { ray } = raycaster;
+
+  // Crystals are tiny, so test a generous sphere instead of the faces.
+  let best = null;
+  let bestDistance = Infinity;
+  for (const crystal of stage.crystals) {
+    const d = crystal.userData;
+    if (d.gone) continue;
+    const distance = ray.origin.distanceTo(crystal.position);
+    if (ray.distanceToPoint(crystal.position) < d.size * 1.5 && distance < bestDistance) {
+      best = crystal;
+      bestDistance = distance;
+    }
+  }
+  const hit = raycaster.intersectObject(stage.handheld.group, true)[0];
+  return hit && hit.distance < bestDistance ? stage.handheld.group : best;
+}
+
+function shatter(crystal) {
+  const d = crystal.userData;
+  d.gone = true;
+  d.current = 0;
+  d.respawnAt = clock + 2.5 + Math.random() * 2;
+  for (let i = 0; i < 8; i++) {
+    const shard = new THREE.Mesh(SHARD_GEOMETRY, i % 3 === 0 ? stage.crystalHot : d.material);
+    shard.position.copy(crystal.position);
+    shard.userData = {
+      velocity: new THREE.Vector3().randomDirection().multiplyScalar(1.2 + Math.random() * 1.8),
+      spin: new THREE.Vector3(Math.random() * 12 - 6, Math.random() * 12 - 6, 0),
+      size: d.size * (0.22 + Math.random() * 0.2),
+      life: 0,
+    };
+    stage.deviceScene.add(shard);
+    stage.shards.push(shard);
+  }
+  sfx.shatter();
+}
+
+canvas.addEventListener('pointerdown', (event) => {
+  const target = pick(event);
+  if (!target) return;
+  if (target === stage.handheld.group) {
+    if (clock - handheldSpinAt < 0.9) return;
+    handheldSpinAt = clock;
+    sfx.spin();
+  } else {
+    shatter(target);
+    hovered = null;
+    canvas.style.cursor = '';
+  }
+});
 
 /* =========================================================
    Theme toggle — circular reveal via View Transitions API

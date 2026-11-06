@@ -113,6 +113,20 @@ export const sfx = {
     tone({ freq: 880, to: 440, duration: 0.07, gain: 0.04 });
   },
 
+  // Glass breaking into a falling sparkle.
+  shatter() {
+    noise({ duration: 0.12, gain: 0.12, filter: 'highpass', from: 5000, to: 2500, q: 0.7 });
+    [2093, 1568, 1319, 1047].forEach((f, i) => {
+      tone({ freq: f, duration: 0.09, gain: 0.025, delay: 0.03 + i * 0.045 });
+    });
+  },
+
+  // Quick rising chime when the handheld spins.
+  spin() {
+    tone({ freq: 660, to: 990, duration: 0.18, gain: 0.04, type: 'triangle' });
+    tone({ freq: 990, to: 1320, duration: 0.2, gain: 0.03, type: 'triangle', delay: 0.12 });
+  },
+
   theme(next) {
     const notes = next === 'dark' ? [784, 523.25] : [523.25, 784];
     tone({ freq: notes[0], duration: 0.1, gain: 0.04 });

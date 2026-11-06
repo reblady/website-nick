@@ -57,7 +57,11 @@ Modelle entstehen in Blender. Blender MCP ist eingerichtet, Claude kann Blender 
 2. **World:** Der Avatar steht in einer Lowpoly-Landschaft und winkt (der Clip „Wave“ startet bei `TIMING.waveAt`). Den Bootscreen verlässt die Seite erst, wenn Avatar und PSP geladen sind. Dann erscheint der Kamera-Sucher, es piept zweimal (Fokus) und der Auslöser klickt.
 3. **Foto:** `capturePhoto()` rendert die Szene mit der `photoCamera` (im Seitenverhältnis des PSP-Bildschirms, näherer Ausschnitt) in `photoTarget`. Diese Textur liegt auf dem Bildschirm der Konsole.
 4. **Zoom:** Weißer Blitz. Die Kamera startet so nah, dass der Konsolenbildschirm den ganzen Viewport füllt (`coverDistance`), und zoomt dann heraus, bis die Konsole schwebt (`restingLayout`).
-5. **Hero:** Das Glas-Panel mit Name, Motto und Discord-Chip erscheint, oben rechts die Knöpfe für Ton und Theme.
+5. **Hero:** Das Glas-Panel mit Name, Motto und Discord-Chip erscheint, oben rechts die Knöpfe für Ton und Theme. Der Hintergrund ist jetzt interaktiv (nur in dieser Phase und nur direkt auf dem Canvas, `pick()` in `main.js`):
+   - Fährt die Maus über einen Kristall, leuchtet er auf, wird größer und dreht sich schneller.
+   - Ein Klick oder Tipp lässt ihn in Splitter zerspringen. 2,5–4,5 s später wächst er an einer neuen Stelle nach.
+   - Ein Klick auf die PSP dreht sie einmal mit einem kleinen Hüpfer.
+   - Die Kristall-Positionen sind relativ zum sichtbaren Bereich gespeichert (`nx`/`ny`), damit sie sich auf jedem Bildschirmformat verteilen.
 
 Wechselt das Theme, wird das Foto in den neuen Farben noch einmal aufgenommen, mit derselben eingefrorenen Pose.
 
@@ -85,7 +89,7 @@ Wechselt das Theme, wird das Foto in den neuen Farben noch einmal aufgenommen, m
 
 - **Ablauf:** eine lange Scroll-Story, bei der beim Scrollen nacheinander Szenen kommen. Bisher gibt es nur die Startsequenz, die Seite scrollt noch nicht.
 - **Retro-Stil:** PS1-Lowpoly-Optik mit dem typischen Texturstil.
-- **Glas:** Liquid Glass ähnlich wie bei Apple, aber mit Retro-Schnitt (Nick hat Variante „B“ gewählt): Pixel-Treppenecken, 2px-Kante mit heller Oberseite, Scanlines, ein Lichtreflex in harten Farbstufen, ein Regenbogen-Rand, der sich ruckelnd dreht, und ein harter Pixel-Schatten am Namen. Die PS1-Szenen liegen im Hintergrund, Text und UI bleiben gut lesbar.
+- **Glas:** Liquid Glass ähnlich wie bei Apple, aber mit Retro-Schnitt (Nick hat Variante „B“ gewählt): Pixel-Treppenecken, 2px-Kante mit heller Oberseite, Scanlines, ein dezenter Lichtfleck unter dem Cursor (nur beim Hovern: Akzentfarbe durch eine Bayer-Dither-Maske in 3px-Zellen, die `createGlintMask()` erzeugt), ein Regenbogen-Rand, der sich ruckelnd dreht, und ein harter Pixel-Schatten am Namen. Die PS1-Szenen liegen im Hintergrund, Text und UI bleiben gut lesbar.
 - **3D-Elemente:** Glas-Objekte, Nicks Avatar und Retro-Gegenstände (zuerst die PSP, ein DS-artiges Gerät wäre auch denkbar). Der Avatar soll vorerst nur winken, später kommt vielleicht mehr dazu. Wo die Elemente in der Scroll-Story auftauchen, ist noch offen, also vorher fragen.
 - **Sound:** dezente Retro- bzw. Konsolen-Sounds, keine Hintergrundmusik.
 - **Abschnitte (geplant):** Über mich, Aktuelles (aus `data/updates.json`), Projekte/Gaming.
