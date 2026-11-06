@@ -51,6 +51,12 @@ const TIMING = {
   zoom: 2.6,
 };
 
+// Crystal drift, in visible-area units: wander speed, push out from behind
+// the UI (acceleration) and the fastest that push may get.
+const WANDER = 0.02;
+const PUSH = 0.35;
+const PUSH_MAX = 0.22;
+
 const root = document.documentElement;
 const canvas = document.getElementById('stage');
 const boot = document.getElementById('boot');
@@ -226,6 +232,10 @@ function placeCrystal(crystal) {
   d.ny = (Math.random() * 2 - 1) * 0.9;
   d.z = -1.5 - Math.random() * 6;
   d.size = 0.12 + Math.random() * 0.28;
+  // Slow wander, in visible-area units per second.
+  const heading = Math.random() * Math.PI * 2;
+  d.vx = Math.cos(heading) * WANDER;
+  d.vy = Math.sin(heading) * WANDER;
 }
 
 /* =========================================================
@@ -358,7 +368,90 @@ function placeDevice(progress, t) {
   deviceCamera.lookAt(0, 0, 0);
 }
 
+// Screen areas covered by UI (panel, counter, buttons, credits) and the
+// handheld, in normalised device coordinates. Refreshed a few times a second.
+let blockers = [];
+let blockersAt = -Infinity;
+const blockerBox = new THREE.Box3();
+const corner = new THREE.Vector3();
+
+function updateBlockers(t) {
+  if (t - blockersAt < 0.25) return;
+  blockersAt = t;
+  blockers = [];
+  for (const el of document.querySelectorAll('.panel, .counter, .controls, .credits')) {
+    const r = el.getBoundingClientRect();
+    if (!r.width) continue;
+    blockers.push({
+      left: (r.left / window.innerWidth) * 2 - 1,
+      right: (r.right / window.innerWidth) * 2 - 1,
+      top: 1 - (r.top / window.innerHeight) * 2,
+      bottom: 1 - (r.bottom / window.innerHeight) * 2,
+    });
+  }
+  blockerBox.setFromObject(stage.handheld.group);
+  const rect = { left: Infinity, right: -Infinity, top: -Infinity, bottom: Infinity };
+  for (let i = 0; i < 8; i++) {
+    corner.set(
+      i & 1 ? blockerBox.max.x : blockerBox.min.x,
+      i & 2 ? blockerBox.max.y : blockerBox.min.y,
+      i & 4 ? blockerBox.max.z : blockerBox.min.z
+    ).project(stage.deviceCamera);
+    rect.left = Math.min(rect.left, corner.x);
+    rect.right = Math.max(rect.right, corner.x);
+    rect.top = Math.max(rect.top, corner.y);
+    rect.bottom = Math.min(rect.bottom, corner.y);
+  }
+  blockers.push(rect);
+}
+
+// Crystals wander slowly. One that ends up behind the UI or the handheld,
+// where it can't be clicked, is pushed gently out of the way, so there is
+// movement behind the glass without crystals piling up there.
+function driftCrystal(d, dt) {
+  const aspect = stage.deviceCamera.aspect;
+  const blocker = blockers.find((b) => d.nx > b.left && d.nx < b.right && d.ny < b.top && d.ny > b.bottom);
+  if (blocker) {
+    // Out through the nearest side that has room behind it (measured in
+    // screen proportions), so it never gets stuck against the screen edge.
+    const exits = [
+      { dist: (d.nx - blocker.left) * aspect, room: blocker.left + 0.97, x: -1, y: 0 },
+      { dist: (blocker.right - d.nx) * aspect, room: 0.97 - blocker.right, x: 1, y: 0 },
+      { dist: blocker.top - d.ny, room: 0.92 - blocker.top, x: 0, y: 1 },
+      { dist: d.ny - blocker.bottom, room: blocker.bottom + 0.92, x: 0, y: -1 },
+    ].filter((e) => e.room > 0.1);
+    const exit = exits.reduce((best, e) => (e.dist < best.dist ? e : best), exits[0] || { x: 1, y: 0 });
+    d.vx += exit.x * PUSH * dt;
+    d.vy += exit.y * PUSH * dt;
+    const speed = Math.hypot(d.vx, d.vy);
+    if (speed > PUSH_MAX) {
+      d.vx *= PUSH_MAX / speed;
+      d.vy *= PUSH_MAX / speed;
+    }
+  } else {
+    // Ease back to wandering speed once it's free.
+    const speed = Math.hypot(d.vx, d.vy);
+    if (speed > WANDER) {
+      const next = Math.max(WANDER, speed - PUSH * dt);
+      d.vx *= next / speed;
+      d.vy *= next / speed;
+    }
+  }
+  d.nx += d.vx * dt;
+  d.ny += d.vy * dt;
+  // Bounce off the edges of the screen.
+  if (Math.abs(d.nx) > 0.97) {
+    d.nx = Math.sign(d.nx) * 0.97;
+    d.vx = -Math.sign(d.nx) * Math.abs(d.vx);
+  }
+  if (Math.abs(d.ny) > 0.92) {
+    d.ny = Math.sign(d.ny) * 0.92;
+    d.vy = -Math.sign(d.ny) * Math.abs(d.vy);
+  }
+}
+
 function animateCrystals(t, dt) {
+  if (phase === 'hero') updateBlockers(t);
   for (const crystal of stage.crystals) {
     const d = crystal.userData;
     const isHovered = hovered === crystal;
@@ -366,6 +459,7 @@ function animateCrystals(t, dt) {
       placeCrystal(crystal);
       d.gone = false;
     }
+    if (phase === 'hero' && !isHovered) driftCrystal(d, dt);
     d.angle += dt * d.spin * (isHovered ? 5 : 1);
     crystal.rotation.y = d.angle;
     crystal.rotation.x = d.angle * 0.6;

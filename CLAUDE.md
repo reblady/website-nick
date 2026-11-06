@@ -64,6 +64,7 @@ Modelle entstehen in Blender. Blender MCP ist eingerichtet, Claude kann Blender 
    - Oben links zählt ein kleiner Glas-Zähler die zerschlagenen Kristalle (dreistellig, max. 999). Der Stand bleibt wie ein Highscore über Besuche erhalten (`localStorage` `crystals`).
    - Ein Klick auf die PSP dreht sie einmal mit einem kleinen Hüpfer.
    - Die Kristall-Positionen sind relativ zum sichtbaren Bereich gespeichert (`nx`/`ny`), damit sie sich auf jedem Bildschirmformat verteilen.
+   - Kristalle treiben langsam umher (`WANDER`). Landen sie hinter Panel, Zähler, Knöpfen, Credits oder der PSP, wo man sie nicht anklicken kann, schiebt `driftCrystal()` sie sanft durch die nächste Seite mit Platz wieder heraus (`PUSH`). So gibt es Bewegung hinter dem Glas, ohne dass sich dort Kristalle sammeln.
 
 Wechselt das Theme, wird das Foto in den neuen Farben noch einmal aufgenommen, mit derselben eingefrorenen Pose.
 
