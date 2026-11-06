@@ -80,7 +80,7 @@ Wechselt das Theme, wird das Foto in den neuen Farben noch einmal aufgenommen, m
 ## Konventionen
 
 - UI-Texte auf Deutsch, Code-Kommentare auf Englisch.
-- Vanilla JS als ES-Module. Keine Abhängigkeiten außer Three.js (CDN) und Google Fonts (Fraunces, Space Grotesk, VT323).
+- Vanilla JS als ES-Module. Keine Abhängigkeiten außer Three.js (CDN) und Google Fonts (Tiny5 Duo, Fraunces, Space Grotesk, VT323).
 - Neue Farben immer als Token für **beide** Themes anlegen, keine hart codierten Farbwerte in Komponenten (Ausnahmen: Bootscreen und Sucher, die immer gleich aussehen).
 - Glas-Optik über die Klasse `glass` wiederverwenden. Glas hat keine runden Ecken, sondern ist per `clip-path` mit Pixel-Treppenecken geschnitten (`--px-shape`, kleine Elemente `--px-shape-sm`). Der Rand ist ein 2px-Ring mit derselben Treppe (`--px-ring`). Weil `clip-path` alles außerhalb abschneidet, funktioniert kein äußerer `box-shadow` auf Glas. Die Polygone sind generiert: Bei einer anderen Stufengröße neu berechnen statt von Hand ändern.
 - Änderungen direkt auf `main` committen und pushen, ohne Branch oder PR (geht sofort live).
@@ -90,12 +90,13 @@ Wechselt das Theme, wird das Foto in den neuen Farben noch einmal aufgenommen, m
 
 - **Ablauf:** eine lange Scroll-Story, bei der beim Scrollen nacheinander Szenen kommen. Bisher gibt es nur die Startsequenz, die Seite scrollt noch nicht.
 - **Retro-Stil:** PS1-Lowpoly-Optik mit dem typischen Texturstil.
-- **Glas:** Liquid Glass ähnlich wie bei Apple, aber mit Retro-Schnitt (Nick hat Variante „B“ gewählt): Pixel-Treppenecken, 2px-Kante mit heller Oberseite, Scanlines, ein festes Raster aus 4px-Zellen (passend zu den Scanlines), das der Cursor in der Akzentfarbe einfärbt: Die Pixel bleiben stehen, nach außen und hinter dem Cursor faden sie in vier harten Stufen aus (Canvas aus `js/glint.js`, nur mit Maus), ein Regenbogen-Rand, der sich ruckelnd dreht, und ein harter Pixel-Schatten am Namen. Die PS1-Szenen liegen im Hintergrund, Text und UI bleiben gut lesbar.
+- **Glas:** Liquid Glass ähnlich wie bei Apple, aber mit Retro-Schnitt (Nick hat Variante „B“ gewählt): Pixel-Treppenecken, 2px-Kante mit heller Oberseite, Scanlines, ein festes Raster aus 4px-Zellen (passend zu den Scanlines), das der Cursor in der Akzentfarbe einfärbt: Die Pixel bleiben stehen, das Licht fadet flüssig ein und hinter dem Cursor aus, wird aber ohne echte Transparenz gezeichnet: Jede Zelle ist ganz an oder aus, die Abstufung entsteht durch ein festes Bayer-Dithermuster (wie die Mesh-Transparenz der 32-Bit-Konsolen). Niedrige Bildrate, Nachziehen und harte Helligkeitsstufen hat Nick alle verworfen (Canvas aus `js/glint.js`, nur mit Maus), ein Regenbogen-Rand, der sich ruckelnd dreht, und ein harter Pixel-Schatten am Namen. Die PS1-Szenen liegen im Hintergrund, Text und UI bleiben gut lesbar.
 - **3D-Elemente:** Glas-Objekte, Nicks Avatar und Retro-Gegenstände (zuerst die PSP, ein DS-artiges Gerät wäre auch denkbar). Der Avatar soll vorerst nur winken, später kommt vielleicht mehr dazu. Wo die Elemente in der Scroll-Story auftauchen, ist noch offen, also vorher fragen.
 - **Sound:** dezente Retro- bzw. Konsolen-Sounds, keine Hintergrundmusik.
 - **Abschnitte (geplant):** Über mich, Aktuelles (aus `data/updates.json`), Projekte/Gaming.
 - **Plattformen:** Instagram, Discord, GitHub, Steam. YouTube ist vorerst raus und kommt vielleicht später wieder dazu.
 - **Discord:** Live-Status über Lanyard.
+- **Schriften:** Name in Tiny5 Duo 700 (`--font-title`, Pixelschrift, von Nick nach vielen Vergleichen gewählt). Handle, Chip und Bootscreen in VT323, Motto in Fraunces kursiv, sonst Space Grotesk.
 - **Farben:** Palette „Obsidian Gold, gealtert“, Dark/Light mit Kreis-Überblendung beim Umschalten.
   - Dunkel: Himmel `#4a4f57` → `#5a4a35` → `#1a1712`, Berge `#2a2620`, Boden `#100e0b`, Nebel `#3a352c`, Akzent/Objekte `#e0b46a` / `#8a6a3a`, Text `#f4ecdd`, gedämpfter Text `#c9bda6`
   - Hell: Himmel `#f6ead9` → `#ecc9a2` → `#cf8a63`, Berge `#b6795a`, Boden `#7e4d36`, Nebel `#e9cdb0`, Akzent/Objekte `#a8492a` / `#e08a62`, Text `#2c2117`, gedämpfter Text `#5e4a38`

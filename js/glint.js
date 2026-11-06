@@ -1,13 +1,17 @@
 // Light on the glass: a fixed grid of 4px cells, lined up with the scanlines,
-// that the cursor tints as it passes. The pixels stay put; cells fade in
-// towards the edge of the spot and fade out behind the cursor, in a few hard
-// steps like a low colour depth. Mouse only.
+// that the cursor tints as it passes. The pixels stay put; the light fades in
+// towards the edge of the spot and fades out behind the cursor. Old consoles
+// had no real transparency, so instead of blending, each cell is either fully
+// lit or off and the fade is faked with an ordered (Bayer) dither pattern,
+// like the mesh transparency of the 32-bit era. Mouse only.
 
 const CELL = 4;
 const RADIUS = 56;
-const LEVELS = 4;
 const FADE_IN = 8;
 const FADE_OUT = 2.5;
+// Brightest density in the middle of the spot, so it never turns solid.
+const MAX = 0.8;
+const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5].map((v) => (v + 0.5) / 16);
 
 function attach(el) {
   const canvas = document.createElement('canvas');
@@ -51,19 +55,18 @@ function attach(el) {
         let target = 0;
         if (cursor) {
           const r = Math.hypot((x + 0.5) * CELL - cursor.x, (y + 0.5) * CELL - cursor.y) / RADIUS;
-          if (r < 1) target = 1 - r;
+          if (r < 1) target = (1 - r) * MAX;
         }
         const a = alpha[i];
         const next = target > a ? Math.min(target, a + dt * FADE_IN) : Math.max(target, a - dt * FADE_OUT);
         alpha[i] = next;
-        if (next < 0.02) continue;
+        if (next < 0.01) continue;
         active = true;
+        if (next <= BAYER[(y % 4) * 4 + (x % 4)]) continue;
         // 3×3 cell between the 1px scanlines.
-        g.globalAlpha = Math.ceil(next * LEVELS) / LEVELS;
         g.fillRect(x * CELL, y * CELL + 1, CELL - 1, CELL - 1);
       }
     }
-    g.globalAlpha = 1;
 
     if (active) requestAnimationFrame(frame);
     else running = false;

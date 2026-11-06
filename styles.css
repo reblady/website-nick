@@ -6,6 +6,7 @@
 @property --rim-angle { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
 
 :root {
+  --font-title: 'Tiny5 Duo', 'VT323', ui-monospace, monospace;
   --font-display: 'Fraunces', 'Iowan Old Style', serif;
   --font-ui: 'Space Grotesk', 'Helvetica Neue', sans-serif;
   --font-pixel: 'VT323', ui-monospace, monospace;
@@ -455,11 +456,11 @@ html[data-theme='dark'] .icon--moon {
 
 .panel__name {
   margin-top: 4px;
-  font-family: var(--font-display);
-  font-weight: 900;
+  font-family: var(--font-title);
+  font-weight: 700;
   font-size: clamp(3.2rem, 7.5vw, 6.4rem);
-  line-height: 0.88;
-  letter-spacing: -0.01em;
+  line-height: 0.9;
+  letter-spacing: 0.02em;
   text-shadow: 4px 4px 0 var(--glass-shadow-edge);
 }
 
