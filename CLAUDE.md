@@ -24,7 +24,8 @@ Ist auch als `reblady-static` in `.claude/launch.json` hinterlegt. `file://` fun
 - `js/ps1.js` – PS1-Render-Pipeline: rendert in 240p in ein Render-Target, dann Upscale ohne Filterung mit 4×4-Bayer-Dithering und 15-Bit-Farben, plus Überblendung nach Schwarz/Weiß (`fade`). `ps1Material()` baut Materialien mit Vertex-Snapping (wackelnde Polygone) und affinem Texture-Mapping (verzerrte Texturen). Dazu kleine Helfer für prozedurale Pixel-Texturen.
 - `js/avatar.js` – lädt Nicks Avatar aus `assets/models/nick.glb`, ersetzt die Materialien durch `ps1Material` (Textur × Vertex-Farben) und spielt die Clips ab: „Idle“ in Schleife, „Wave“ einmal per `wave()`, danach bleibt der Arm oben.
 - `assets/models/nick.glb` – Avatar-Export aus Blender (realistische Proportionen, dunkelblonde Haare, blaue Augen, olivgrüner Hoodie, Jeans, weiße Sneaker). Die Quelldatei ist `assets/models/nick.blend`, aktuell ist die Collection „NickTripoRig“ (`NickRig3`/`NickBody3`). „NickTripo“ ist die Vorversion mit selbst gebauten Ärmeln, „NickAvatar“ der alte Klötzchen-Avatar. Beide sind ausgeblendet.
-- `js/handheld.js` – eigene Handheld-Konsole, PSP-artig, aber ohne echte Marke oder Logos. Ihr Bildschirm zeigt das Foto.
+- `js/handheld.js` – lädt die PSP aus `assets/models/psp.glb`, färbt sie über die Materialnamen (`PSP_Shell`, `PSP_Trim`, `PSP_Buttons`, `PSP_Accent` = Theme-Akzent, `PSP_Led`) und legt eine eigene, unterteilte Bildschirm-Fläche mit dem Foto darüber. `SCREEN` (Bildschirmgröße und -tiefe) und `BODY_WIDTH` müssen zum Export passen.
+- `assets/models/psp.glb` – „PlayStation Portable (low poly)“ von Senkinsky (Sketchfab), Lizenz CC BY 4.0. Deshalb steht unten rechts auf der Seite (mobil oben links) ein Credit mit Links, der muss bleiben. Quelle in `assets/models/psp.blend` (Collection „PSP“, Objekt `PSPBody`).
 - `js/sound.js` – Retro-Sounds, komplett per Web Audio synthetisiert. Ob der Ton aus ist, steht in `localStorage` unter `muted`.
 - `js/main.js` – Ablauf, Kamera, Theme-Umschalter, Discord-Status, Glas-Reflex. Die Konfiguration steht oben in der Datei (`DISCORD_USER_ID`, `PALETTES`, `TIMING`).
 - `data/updates.json` – Inhalte für den späteren Bereich „Aktuelles“ (`date` im ISO-Format, `title`, `text`, optional `link`). Wird noch nicht angezeigt.
@@ -41,7 +42,8 @@ Modelle entstehen in Blender. Blender MCP ist eingerichtet, Claude kann Blender 
   - Die Arme sind im Mesh seitlich mit dem Oberkörper verschmolzen. Beim Winken zieht der Arm deshalb etwas Hoodie mit, das Mesh bleibt aber geschlossen. Diese Variante war Nick lieber als selbst gebaute Ärmel.
   - Die Animationen „Idle“ und „Wave“ sind von Hand gekeyt, als Rotationen um Welt-Achsen in den Ruherahmen der Knochen umgerechnet.
 - PS1-Stil: wenige Polygone, kleine Pixel-Texturen (8–64 px) mit Interpolation „Closest“.
-- glTF speichert Vertex-Farben linear. `avatar.js` rechnet sie beim Laden zurück auf sRGB, weil die Bühne ohne Color Management arbeitet.
+- Die PSP: Original-Bildschirm entfernt, alles zu einem Mesh mit fünf Materialien zusammengeführt, so skaliert, dass der Bildschirm 0,96 breit ist und auf dem Ursprung liegt (Bildschirmebene bei z = 0,0765). AO ist wie beim Avatar in die Vertex-Farben gebacken. Exportiert ohne UVs, weil keine Texturen nötig sind.
+- glTF speichert Vertex-Farben linear. `vertexColorsToSRGB()` in `ps1.js` rechnet sie beim Laden zurück auf sRGB, weil die Bühne ohne Color Management arbeitet.
 - Blickrichtung in Blender ist −Y, Z zeigt nach oben. Der glTF-Export macht daraus +Z vorne und Y oben, also schaut das Modell in Three.js zur Kamera.
 - Export: GLB, nur Rig und Mesh ausgewählt, `export_animation_mode='NLA_TRACKS'` (Tracks dafür kurz entmuten), `export_vertex_color='ACTIVE'`. Im Modus „Actions“ würden auch die Actions der alten Rigs aus der Datei mitkommen.
 - Texturen werden im Code roh gesampelt (`colorSpace = NoColorSpace`, kein Mipmapping), passend zu `ColorManagement.enabled = false`.
@@ -52,8 +54,8 @@ Modelle entstehen in Blender. Blender MCP ist eingerichtet, Claude kann Blender 
 `boot` → `bootOut` → `world` → `zoom` → `hero` (Phasen in `main.js`, Zeiten in `TIMING`):
 
 1. **Bootscreen:** Ein Gold-Kristall dreht sich, darunter steht „PRESS START“. Erst mit Klick, Tippen oder Enter geht es weiter, denn erst nach dieser Geste dürfen Browser Ton abspielen.
-2. **World:** Der Avatar steht in einer Lowpoly-Landschaft und winkt (der Clip „Wave“ startet bei `TIMING.waveAt`). Den Bootscreen verlässt die Seite erst, wenn das Modell geladen ist. Dann erscheint der Kamera-Sucher, es piept zweimal (Fokus) und der Auslöser klickt.
-3. **Foto:** `capturePhoto()` rendert die Szene mit der `photoCamera` (immer 16:9, näherer Ausschnitt) in `photoTarget`. Diese Textur liegt auf dem Bildschirm der Konsole.
+2. **World:** Der Avatar steht in einer Lowpoly-Landschaft und winkt (der Clip „Wave“ startet bei `TIMING.waveAt`). Den Bootscreen verlässt die Seite erst, wenn Avatar und PSP geladen sind. Dann erscheint der Kamera-Sucher, es piept zweimal (Fokus) und der Auslöser klickt.
+3. **Foto:** `capturePhoto()` rendert die Szene mit der `photoCamera` (im Seitenverhältnis des PSP-Bildschirms, näherer Ausschnitt) in `photoTarget`. Diese Textur liegt auf dem Bildschirm der Konsole.
 4. **Zoom:** Weißer Blitz. Die Kamera startet so nah, dass der Konsolenbildschirm den ganzen Viewport füllt (`coverDistance`), und zoomt dann heraus, bis die Konsole schwebt (`restingLayout`).
 5. **Hero:** Das Glas-Panel mit Name, Motto und Discord-Chip erscheint, oben rechts die Knöpfe für Ton und Theme.
 
@@ -84,7 +86,7 @@ Wechselt das Theme, wird das Foto in den neuen Farben noch einmal aufgenommen, m
 - **Ablauf:** eine lange Scroll-Story, bei der beim Scrollen nacheinander Szenen kommen. Bisher gibt es nur die Startsequenz, die Seite scrollt noch nicht.
 - **Retro-Stil:** PS1-Lowpoly-Optik mit dem typischen Texturstil.
 - **Glas:** Liquid Glass ähnlich wie bei Apple, aber mit Retro-Schnitt (Nick hat Variante „B“ gewählt): Pixel-Treppenecken, 2px-Kante mit heller Oberseite, Scanlines, ein Lichtreflex in harten Farbstufen, ein Regenbogen-Rand, der sich ruckelnd dreht, und ein harter Pixel-Schatten am Namen. Die PS1-Szenen liegen im Hintergrund, Text und UI bleiben gut lesbar.
-- **3D-Elemente:** Glas-Objekte, Nicks Avatar und Retro-Gegenstände (zuerst die Handheld-Konsole, ein DS-artiges Gerät wäre auch denkbar). Der Avatar soll vorerst nur winken, später kommt vielleicht mehr dazu. Wo die Elemente in der Scroll-Story auftauchen, ist noch offen, also vorher fragen.
+- **3D-Elemente:** Glas-Objekte, Nicks Avatar und Retro-Gegenstände (zuerst die PSP, ein DS-artiges Gerät wäre auch denkbar). Der Avatar soll vorerst nur winken, später kommt vielleicht mehr dazu. Wo die Elemente in der Scroll-Story auftauchen, ist noch offen, also vorher fragen.
 - **Sound:** dezente Retro- bzw. Konsolen-Sounds, keine Hintergrundmusik.
 - **Abschnitte (geplant):** Über mich, Aktuelles (aus `data/updates.json`), Projekte/Gaming.
 - **Plattformen:** Instagram, Discord, GitHub, Steam. YouTube ist vorerst raus und kommt vielleicht später wieder dazu.

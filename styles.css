@@ -500,6 +500,38 @@ html[data-theme='dark'] .icon--moon {
 .chip__dot[data-status='dnd'] { background: var(--status-dnd); }
 
 /* ---------------------------------------------------------
+   Credits for third-party models (CC BY needs them visible)
+--------------------------------------------------------- */
+
+.credits {
+  position: fixed;
+  right: max(16px, env(safe-area-inset-right));
+  bottom: max(12px, env(safe-area-inset-bottom));
+  z-index: 15;
+  max-width: calc(100% - 32px);
+  font-family: var(--font-pixel);
+  font-size: 15px;
+  color: var(--ink-dim);
+  text-align: right;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 600ms 800ms ease;
+}
+
+.is-revealed .credits {
+  opacity: 0.75;
+  pointer-events: auto;
+}
+
+.credits a {
+  color: inherit;
+}
+
+.credits a:hover {
+  color: var(--accent);
+}
+
+/* ---------------------------------------------------------
    Phone — handheld sits at the top, panel at the bottom
 --------------------------------------------------------- */
 
@@ -516,5 +548,14 @@ html[data-theme='dark'] .icon--moon {
 
   .panel__name {
     font-size: clamp(2.8rem, 14vw, 4.4rem);
+  }
+
+  .credits {
+    top: max(16px, env(safe-area-inset-top));
+    bottom: auto;
+    left: 16px;
+    right: auto;
+    max-width: calc(100% - 140px);
+    text-align: left;
   }
 }

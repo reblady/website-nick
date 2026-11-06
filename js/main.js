@@ -1,6 +1,6 @@
 import { THREE, createPS1, ps1Material, speckle } from './ps1.js';
 import { loadAvatar } from './avatar.js';
-import { createHandheld, SCREEN } from './handheld.js';
+import { createHandheld, SCREEN, BODY_WIDTH } from './handheld.js';
 import * as sound from './sound.js';
 
 const { sfx } = sound;
@@ -127,9 +127,9 @@ function buildStage(ps1) {
 
   const worldCamera = new THREE.PerspectiveCamera(32, 1, 0.1, 100);
 
-  // The photo is always 16:9 to match the handheld's screen.
+  // The photo has the aspect of the handheld's screen.
   const photoCamera = new THREE.PerspectiveCamera(32, SCREEN.width / SCREEN.height, 0.1, 100);
-  const photoTarget = new THREE.WebGLRenderTarget(384, 216, {
+  const photoTarget = new THREE.WebGLRenderTarget(384, Math.round((384 * SCREEN.height) / SCREEN.width), {
     minFilter: THREE.NearestFilter,
     magFilter: THREE.NearestFilter,
     generateMipmaps: false,
@@ -193,15 +193,18 @@ function buildStage(ps1) {
     bootScene, bootCamera, bootCrystal,
     worldScene, worldCamera, avatar: null,
     photoCamera, photoTarget,
-    deviceScene, deviceCamera, handheld, crystals,
+    deviceScene, deviceCamera, handheld, handheldLoaded: false, crystals,
   };
 
-  // The avatar model loads while the boot screen is up; the sequence waits
-  // for it before leaving the boot screen.
+  // Both models load while the boot screen is up; the sequence waits for
+  // them before leaving the boot screen.
   loadAvatar(snap).then((avatar) => {
     result.avatar = avatar;
     worldScene.add(avatar.root);
   }).catch((e) => console.error('Avatar konnte nicht geladen werden', e));
+  handheld.ready.then(() => {
+    result.handheldLoaded = true;
+  }).catch((e) => console.error('Handheld konnte nicht geladen werden', e));
 
   return result;
 }
@@ -247,14 +250,14 @@ function restingLayout(camera) {
       distance,
       position: new THREE.Vector3(visibleWidth * 0.24, 0.05, 0),
       rotation: new THREE.Euler(-0.12, -0.42, 0.05),
-      scale: Math.min(1, (visibleWidth * 0.42) / 2),
+      scale: Math.min(1, (visibleWidth * 0.42) / BODY_WIDTH),
     };
   }
   return {
     distance,
     position: new THREE.Vector3(0, visibleHeight * 0.21, 0),
     rotation: new THREE.Euler(-0.08, -0.3, 0.03),
-    scale: Math.min(1, (visibleWidth * 0.88) / 2),
+    scale: Math.min(1, (visibleWidth * 0.82) / BODY_WIDTH),
   };
 }
 
@@ -356,7 +359,7 @@ function draw(now) {
       ? 1 - clamp01(elapsed / TIMING.bootFadeIn)
       : clamp01(elapsed / TIMING.bootOut);
     ps1.render(stage.bootScene, stage.bootCamera);
-    if (phase === 'bootOut' && elapsed >= TIMING.bootOut && stage.avatar) {
+    if (phase === 'bootOut' && elapsed >= TIMING.bootOut && stage.avatar && stage.handheldLoaded) {
       setPhase('world');
       sfx.boot();
     }

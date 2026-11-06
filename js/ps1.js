@@ -185,3 +185,18 @@ export function speckle(base, strength = 0.12, size = 32) {
     }
   });
 }
+
+// glTF stores vertex colours as linear values. Everything else on the stage is
+// sampled raw (no colour management), so bring baked models back to the sRGB
+// values they were baked with. Returns whether the geometry has colours.
+export function vertexColorsToSRGB(geometry) {
+  const color = geometry.attributes.color;
+  if (!color) return false;
+  const c = new THREE.Color();
+  for (let i = 0; i < color.count; i++) {
+    c.setRGB(color.getX(i), color.getY(i), color.getZ(i)).convertLinearToSRGB();
+    color.setXYZ(i, c.r, c.g, c.b);
+  }
+  color.needsUpdate = true;
+  return true;
+}
