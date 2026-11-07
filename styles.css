@@ -440,22 +440,24 @@ button {
 
 /* Jumping between sections: the old view is pulled away in the direction
    you'd scroll and the new one slides in after it, both stretched and
-   blurred by the speed (--page-dir: 1 down, -1 up). The fixed UI stays. */
+   blurred by the speed (--page-dir: 1 down, -1 up). The further the jump,
+   the longer it takes (--page-duration, set by js/pages.js). The fixed UI
+   stays. */
 html.is-paging .pages { view-transition-name: pages; }
 html.is-paging .controls { view-transition-name: controls; }
 html.is-paging .counter { view-transition-name: counter; }
 
 html.is-paging::view-transition-old(root) {
-  animation: page-out 640ms cubic-bezier(0.7, 0, 0.3, 1) both;
+  animation: page-out var(--page-duration, 640ms) cubic-bezier(0.7, 0, 0.3, 1) both;
 }
 
 html.is-paging::view-transition-new(root) {
-  animation: page-in 640ms cubic-bezier(0.7, 0, 0.3, 1) both;
+  animation: page-in var(--page-duration, 640ms) cubic-bezier(0.7, 0, 0.3, 1) both;
 }
 
 html.is-paging::view-transition-old(pages),
 html.is-paging::view-transition-new(pages) {
-  animation-duration: 640ms;
+  animation-duration: var(--page-duration, 640ms);
 }
 
 @keyframes page-out {
@@ -687,8 +689,9 @@ html[data-theme='dark'] .icon--moon {
 }
 
 /* ---------------------------------------------------------
-   Scroll story — sections after the hero, glass panels over
-   the same 3D stage. For now one placeholder.
+   Scroll story — one section per world of the journey (space
+   is the hero), glass panels over the 3D stage. Placeholders
+   for now; panels alternate sides on desktop.
 --------------------------------------------------------- */
 
 .story {
@@ -701,6 +704,11 @@ html[data-theme='dark'] .icon--moon {
   padding: var(--gutter);
   padding-right: max(var(--gutter), env(safe-area-inset-right));
   pointer-events: none;
+}
+
+.story--left {
+  justify-content: flex-start;
+  padding-left: max(var(--gutter), env(safe-area-inset-left));
 }
 
 .story__panel {
@@ -728,7 +736,8 @@ html[data-theme='dark'] .icon--moon {
   margin-top: 4px;
   font-family: var(--font-title);
   font-weight: 700;
-  font-size: clamp(2.6rem, 5.5vw, 4.6rem);
+  /* Fits the longest world name (ATMOSPHÄRE) on one line. */
+  font-size: clamp(2rem, 3.3vw, 3.2rem);
   line-height: 0.9;
   letter-spacing: 0.02em;
   text-shadow: 4px 4px 0 var(--glass-shadow-edge);
@@ -803,13 +812,18 @@ html[data-theme='dark'] .icon--moon {
     font-size: 17px;
   }
 
-  .story {
+  .story,
+  .story--left {
     justify-content: center;
     padding: 16px;
   }
 
   .story__panel {
     width: 100%;
+  }
+
+  .story__title {
+    font-size: clamp(1.8rem, 9vw, 2.6rem);
   }
 
   .pages {

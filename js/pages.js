@@ -8,6 +8,21 @@ import { sfx } from './sound.js';
 
 const root = document.documentElement;
 
+// Scroll position as a fractional section index: 1.5 = halfway from the
+// second section to the third. Also drives the 3D journey (js/journey.js).
+export function sectionProgress() {
+  const sections = document.querySelectorAll('[data-page]');
+  const y = window.scrollY;
+  for (let i = sections.length - 1; i >= 0; i--) {
+    const top = sections[i].offsetTop;
+    if (y < top && i > 0) continue;
+    if (i === sections.length - 1) return i;
+    const next = sections[i + 1].offsetTop;
+    return i + Math.min(1, Math.max(0, (y - top) / (next - top)));
+  }
+  return 0;
+}
+
 export function initPages() {
   const nav = document.querySelector('.pages');
   const sections = [...document.querySelectorAll('[data-page]')];
@@ -23,22 +38,8 @@ export function initPages() {
     return button;
   });
 
-  // Scroll position as a fractional section index: 1.5 = halfway from the
-  // second section to the third.
-  function progress() {
-    const y = window.scrollY;
-    for (let i = sections.length - 1; i >= 0; i--) {
-      const top = sections[i].offsetTop;
-      if (y < top && i > 0) continue;
-      if (i === sections.length - 1) return i;
-      const next = sections[i + 1].offsetTop;
-      return i + Math.min(1, Math.max(0, (y - top) / (next - top)));
-    }
-    return 0;
-  }
-
   function update() {
-    const p = progress();
+    const p = sectionProgress();
     const current = Math.round(p);
     buttons.forEach((button, i) => {
       button.style.setProperty('--fill', Math.max(0, 1 - Math.abs(p - i)).toFixed(3));
@@ -55,6 +56,9 @@ export function initPages() {
       return;
     }
     root.style.setProperty('--page-dir', top > window.scrollY ? '1' : '-1');
+    // Longer the further it goes: one section 640 ms, each one more +260 ms.
+    const distance = Math.abs(sections.indexOf(section) - Math.round(sectionProgress()));
+    root.style.setProperty('--page-duration', `${640 + Math.max(0, distance - 1) * 260}ms`);
     root.classList.add('is-paging');
     const transition = document.startViewTransition(() => {
       window.scrollTo({ top, behavior: 'instant' });

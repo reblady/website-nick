@@ -5,7 +5,8 @@ import * as sound from './sound.js';
 import { initGlint } from './glint.js';
 import { initTouchLight } from './touch.js';
 import { initLens } from './lens.js';
-import { initPages } from './pages.js';
+import { initPages, sectionProgress } from './pages.js';
+import { createJourney, BAND } from './journey.js';
 
 const { sfx } = sound;
 
@@ -150,16 +151,16 @@ function buildStage(ps1) {
     generateMipmaps: false,
   });
 
-  // --- Device ---
+  // --- Device: the handheld in space, and below it the scroll journey ---
   const deviceScene = new THREE.Scene();
-  deviceScene.background = sky;
-  deviceScene.fog = new THREE.Fog(palette.fog, 9, 30);
   const deviceAmbient = new THREE.AmbientLight(palette.ambient, 1.6);
   const deviceKey = new THREE.DirectionalLight(palette.sun, 2.6);
   deviceKey.position.set(2.5, 3, 5);
   const deviceRim = new THREE.DirectionalLight(palette.accent, 2.2);
   deviceRim.position.set(-4, 1.5, -2);
   deviceScene.add(deviceAmbient, deviceKey, deviceRim);
+  // Owns the device scene's sky, fog and light colours from here on.
+  const journey = createJourney(snap, deviceScene, { ambient: deviceAmbient, key: deviceKey });
 
   const handheld = createHandheld(snap, photoTarget.texture);
   deviceScene.add(handheld.group);
@@ -183,7 +184,7 @@ function buildStage(ps1) {
     deviceScene.add(crystal);
     crystals.push(crystal);
   }
-  const deviceCamera = new THREE.PerspectiveCamera(35, 1, 0.05, 100);
+  const deviceCamera = new THREE.PerspectiveCamera(35, 1, 0.05, 160);
 
   function setPalette(p) {
     const g = skyCanvas.getContext('2d');
@@ -196,11 +197,8 @@ function buildStage(ps1) {
     sky.needsUpdate = true;
 
     worldScene.fog.color.set(p.fog);
-    deviceScene.fog.color.set(p.fog);
     worldAmbient.color.set(p.ambient);
-    deviceAmbient.color.set(p.ambient);
     worldSun.color.set(p.sun);
-    deviceKey.color.set(p.sun);
     deviceRim.color.set(p.accent);
     groundMat.color.set(p.ground);
     mountainMat.color.set(p.mountain);
@@ -217,6 +215,7 @@ function buildStage(ps1) {
     worldScene, worldCamera, avatar: null,
     photoCamera, photoTarget,
     deviceScene, deviceCamera, handheld, handheldLoaded: false, crystals, crystalHot, shards: [],
+    journey, descent: 0,
   };
 
   // Both models load while the boot screen is up; the sequence waits for
@@ -364,10 +363,11 @@ function placeDevice(progress, t) {
   group.rotation.set(rest.rotation.x * progress, rest.rotation.y * progress, rest.rotation.z * progress);
   group.scale.setScalar(THREE.MathUtils.lerp(1, rest.scale, progress));
 
-  // Scrolls away with the hero: at z = 0 one viewport of scroll is exactly
-  // one visible height, so the handheld moves with the page.
+  // The camera sinks with the journey (stage.descent). The handheld stays in
+  // space but scrolls away with the hero: at z = 0 one viewport of scroll is
+  // exactly one visible height, so it moves with the page.
   const visibleHeight = 2 * rest.distance * halfTan(deviceCamera.fov);
-  group.position.y += (window.scrollY / window.innerHeight) * visibleHeight;
+  group.position.y += stage.descent + (window.scrollY / window.innerHeight) * visibleHeight;
 
   // Gentle float and pointer parallax, faded in with the zoom.
   group.position.y += Math.sin(t * 1.1) * 0.035 * progress;
@@ -382,8 +382,8 @@ function placeDevice(progress, t) {
   }
 
   // Exponential so the zoom out feels even instead of rushing at the start.
-  deviceCamera.position.set(0, 0, start * Math.pow(rest.distance / start, progress));
-  deviceCamera.lookAt(0, 0, 0);
+  deviceCamera.position.set(0, stage.descent, start * Math.pow(rest.distance / start, progress));
+  deviceCamera.lookAt(0, stage.descent, 0);
 }
 
 // Screen areas covered by UI (panel, counter, buttons, credits) and the
@@ -483,6 +483,7 @@ function animateCrystals(t, dt) {
     const reach = (REST_DISTANCE - d.z) * halfTan(stage.deviceCamera.fov);
     crystal.position.set(
       d.nx * reach * stage.deviceCamera.aspect,
+      // Crystals live in space only; deeper down the camera leaves them behind.
       d.ny * reach + Math.sin(t * 0.8 + d.bob) * 0.15,
       d.z
     );
@@ -572,8 +573,20 @@ function draw(now) {
     }
   }
   const progress = phase === 'zoom' ? ease(clamp01((elapsed - TIMING.zoomDelay) / TIMING.zoom)) : 1;
-  ps1.fadeColor.value.set('#ffffff');
-  ps1.fade.value = phase === 'zoom' ? 1 - clamp01(elapsed / TIMING.flash) : 0;
+  const journeyProgress = phase === 'hero' ? sectionProgress() : 0;
+  stage.descent = -journeyProgress * BAND;
+  stage.journey.update(journeyProgress, t, dt, root.dataset.theme);
+  if (phase === 'zoom') {
+    // White flash of the photo.
+    ps1.fadeColor.value.set('#ffffff');
+    ps1.fade.value = 1 - clamp01(elapsed / TIMING.flash);
+    ps1.wave.value = 0;
+  } else {
+    ps1.fade.value = 0;
+    // Under the lake's surface the picture wobbles and light ripples over it.
+    ps1.wave.value = stage.journey.underwater(journeyProgress);
+    ps1.time.value = t;
+  }
   placeDevice(progress, t);
   animateCrystals(t, dt);
   ps1.render(stage.deviceScene, stage.deviceCamera);

@@ -19,11 +19,15 @@ const POST_VERTEX = /* glsl */ `
 
 // Nearest-neighbour upscale + 4x4 Bayer dither + 15-bit colour (5 bits per
 // channel), then a fade towards a solid colour for black/white transitions.
+// uWave is the underwater look: the picture wobbles in whole low-res pixels
+// and bands of refracted light ripple across it, brighter towards the top.
 const POST_FRAGMENT = /* glsl */ `
   uniform sampler2D tDiffuse;
   uniform vec2 uLow;
   uniform float uFade;
   uniform vec3 uFadeColor;
+  uniform float uWave;
+  uniform float uTime;
   varying vec2 vUv;
 
   float bayer(vec2 p) {
@@ -34,7 +38,21 @@ const POST_FRAGMENT = /* glsl */ `
 
   void main() {
     vec2 px = floor(vUv * uLow);
-    vec3 c = texture2D(tDiffuse, (px + 0.5) / uLow).rgb;
+    vec2 wobble = floor(vec2(
+      sin(px.y * 0.06 + uTime * 2.2) * 3.0 + sin(px.y * 0.15 + uTime * 3.7) * 1.2,
+      cos(px.x * 0.05 + uTime * 1.8) * 1.6
+    ) * uWave + 0.5);
+    vec3 c = texture2D(tDiffuse, (px + wobble + 0.5) / uLow).rgb;
+    if (uWave > 0.0) {
+      // Two interfering wave fields; light focuses into thin wavy lines
+      // where they cancel out, like caustics drifting over everything.
+      // Each field is bent by the other, so the web looks organic.
+      float w = abs(sin(px.x * 0.083 + sin(px.y * 0.05 + uTime * 0.7) * 1.6 + uTime)
+        + sin(px.y * 0.097 + sin(px.x * 0.041 - uTime * 0.5) * 1.9 - uTime * 0.8));
+      float focus = 1.0 - smoothstep(0.0, 0.16, w);
+      c += vec3(0.07, 0.18, 0.18) * focus * uWave * vUv.y * vUv.y;
+      c = mix(c, c * vec3(0.8, 1.0, 1.0), uWave * 0.4);
+    }
     c += bayer(px) / 31.0;
     c = floor(c * 31.0 + 0.5) / 31.0;
     c = mix(c, uFadeColor, uFade);
@@ -63,6 +81,8 @@ export function createPS1(canvas) {
       uLow: { value: low },
       uFade: { value: 1 },
       uFadeColor: { value: new THREE.Color(0x000000) },
+      uWave: { value: 0 },
+      uTime: { value: 0 },
     },
     vertexShader: POST_VERTEX,
     fragmentShader: POST_FRAGMENT,
@@ -103,6 +123,8 @@ export function createPS1(canvas) {
     snap,
     fade: post.uniforms.uFade,
     fadeColor: post.uniforms.uFadeColor,
+    wave: post.uniforms.uWave,
+    time: post.uniforms.uTime,
     resize,
     render,
     renderTo,
@@ -149,11 +171,11 @@ export function ps1Material(snap, { color = 0xffffff, map = null, unlit = false,
    without filtering so every texel stays a hard pixel.
 --------------------------------------------------------- */
 
-export function pixelTexture(size, paint) {
+export function pixelTexture(size, paint, height = size) {
   const canvas = document.createElement('canvas');
   canvas.width = size;
-  canvas.height = size;
-  paint(canvas.getContext('2d'), size);
+  canvas.height = height;
+  paint(canvas.getContext('2d'), size, height);
   const texture = new THREE.CanvasTexture(canvas);
   texture.magFilter = THREE.NearestFilter;
   texture.minFilter = THREE.NearestFilter;
