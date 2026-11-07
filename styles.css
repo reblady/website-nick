@@ -778,12 +778,29 @@ html[data-theme='dark'] .icon--moon {
     padding-bottom: calc(max(14px, env(safe-area-inset-bottom)) + 34px);
   }
 
+  /* Compact, so there is room to play with the crystals above it. */
   .panel {
     width: 100%;
+    padding: 18px 18px 16px;
+  }
+
+  .panel__handle {
+    font-size: 18px;
   }
 
   .panel__name {
-    font-size: clamp(2.8rem, 14vw, 4.4rem);
+    font-size: clamp(2.2rem, 11vw, 3.3rem);
+  }
+
+  .panel__motto {
+    margin-top: 10px;
+    font-size: 0.98rem;
+  }
+
+  .chip {
+    margin-top: 14px;
+    padding: 6px 12px;
+    font-size: 17px;
   }
 
   .story {

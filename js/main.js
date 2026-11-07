@@ -60,6 +60,11 @@ const WANDER = 0.02;
 const PUSH = 0.35;
 const PUSH_MAX = 0.22;
 
+// Filled by updateBlockers(); declared up here because crystals are placed
+// while the stage is built.
+let blockers = [];
+const blockerAt = (x, y) => blockers.find((b) => x > b.left && x < b.right && y < b.top && y > b.bottom);
+
 const root = document.documentElement;
 const canvas = document.getElementById('stage');
 const boot = document.getElementById('boot');
@@ -231,8 +236,12 @@ function buildStage(ps1) {
 // the visible area (−1…1) so the crystals spread over any screen shape.
 function placeCrystal(crystal) {
   const d = crystal.userData;
-  d.nx = (Math.random() * 2 - 1) * 0.95;
-  d.ny = (Math.random() * 2 - 1) * 0.9;
+  // Prefer a free spot, not behind the UI or the handheld.
+  for (let tries = 0; tries < 12; tries++) {
+    d.nx = (Math.random() * 2 - 1) * 0.95;
+    d.ny = (Math.random() * 2 - 1) * 0.9;
+    if (!blockerAt(d.nx, d.ny)) break;
+  }
   d.z = -1.5 - Math.random() * 6;
   d.size = 0.12 + Math.random() * 0.28;
   // Slow wander, in visible-area units per second.
@@ -288,11 +297,12 @@ function restingLayout(camera) {
       scale: Math.min(1, (visibleWidth * 0.42) / BODY_WIDTH),
     };
   }
+  // Phones: smaller and higher, leaving the middle free for the crystals.
   return {
     distance,
-    position: new THREE.Vector3(0, visibleHeight * 0.21, 0),
+    position: new THREE.Vector3(0, visibleHeight * 0.27, 0),
     rotation: new THREE.Euler(-0.08, -0.3, 0.03),
-    scale: Math.min(1, (visibleWidth * 0.82) / BODY_WIDTH),
+    scale: Math.min(1, (visibleWidth * 0.6) / BODY_WIDTH),
   };
 }
 
@@ -378,7 +388,6 @@ function placeDevice(progress, t) {
 
 // Screen areas covered by UI (panel, counter, buttons, credits) and the
 // handheld, in normalised device coordinates. Refreshed a few times a second.
-let blockers = [];
 let blockersAt = -Infinity;
 const blockerBox = new THREE.Box3();
 const corner = new THREE.Vector3();
@@ -418,7 +427,7 @@ function updateBlockers(t) {
 // movement behind the glass without crystals piling up there.
 function driftCrystal(d, dt) {
   const aspect = stage.deviceCamera.aspect;
-  const blocker = blockers.find((b) => d.nx > b.left && d.nx < b.right && d.ny < b.top && d.ny > b.bottom);
+  const blocker = blockerAt(d.nx, d.ny);
   if (blocker) {
     // Out through the nearest side that has room behind it (measured in
     // screen proportions), so it never gets stuck against the screen edge.
@@ -660,14 +669,16 @@ function pick(event) {
   raycaster.setFromCamera(ndc, stage.deviceCamera);
   const { ray } = raycaster;
 
-  // Crystals are tiny, so test a generous sphere instead of the faces.
+  // Crystals are tiny, so test a generous sphere instead of the faces;
+  // fingers get an even bigger one.
+  const reach = event.pointerType === 'mouse' ? 1.5 : 2.4;
   let best = null;
   let bestDistance = Infinity;
   for (const crystal of stage.crystals) {
     const d = crystal.userData;
     if (d.gone) continue;
     const distance = ray.origin.distanceTo(crystal.position);
-    if (ray.distanceToPoint(crystal.position) < d.size * 1.5 && distance < bestDistance) {
+    if (ray.distanceToPoint(crystal.position) < d.size * reach && distance < bestDistance) {
       best = crystal;
       bestDistance = distance;
     }

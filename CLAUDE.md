@@ -67,6 +67,8 @@ Modelle entstehen in Blender. Blender MCP ist eingerichtet, Claude kann Blender 
    - Oben links zählt ein kleiner Glas-Zähler die zerschlagenen Kristalle (dreistellig, max. 999). Der Stand bleibt wie ein Highscore über Besuche erhalten (`localStorage` `crystals`).
    - Ein Klick auf die PSP dreht sie einmal mit einem kleinen Hüpfer.
    - Die Kristall-Positionen sind relativ zum sichtbaren Bereich gespeichert (`nx`/`ny`), damit sie sich auf jedem Bildschirmformat verteilen.
+   - Neue Kristalle suchen sich einen freien Platz (bis zu 12 Versuche, nicht hinter UI oder PSP). Finger treffen sie mit größerem Radius als die Maus.
+   - Auf dem Handy sind PSP (60 % der Breite, weiter oben) und Hero-Panel (kleinere Schrift, weniger Abstand) bewusst kompakt, damit in der Mitte Platz zum Spielen bleibt.
    - Kristalle treiben langsam umher (`WANDER`). Landen sie hinter Panel, Zähler, Knöpfen, Credits oder der PSP, wo man sie nicht anklicken kann, schiebt `driftCrystal()` sie sanft durch die nächste Seite mit Platz wieder heraus (`PUSH`). So gibt es Bewegung hinter dem Glas, ohne dass sich dort Kristalle sammeln.
 
 Danach ist die Seite scrollbar (vorher sperrt `html:not(.is-revealed) body` das Scrollen, und beim Laden springt sie immer nach oben):
