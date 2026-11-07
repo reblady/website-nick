@@ -3,6 +3,7 @@ import { loadAvatar } from './avatar.js';
 import { createHandheld, SCREEN, BODY_WIDTH } from './handheld.js';
 import * as sound from './sound.js';
 import { initGlint } from './glint.js';
+import { initTouchLight } from './touch.js';
 import { initLens } from './lens.js';
 import { initPages } from './pages.js';
 
@@ -819,6 +820,7 @@ function initDiscordStatus() {
 
 initPages();
 initGlint();
+initTouchLight();
 
 // SVG filters only work as a backdrop-filter in Chromium; elsewhere the glass
 // keeps the plain blur from styles.css.
