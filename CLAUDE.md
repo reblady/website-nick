@@ -110,7 +110,7 @@ Wechselt das Theme, wird das Foto in den neuen Farben noch einmal aufgenommen, m
 - **Sound:** dezente Retro- bzw. Konsolen-Sounds, keine Hintergrundmusik.
 - **Abschnitte (geplant):** Über mich, Aktuelles (aus `data/updates.json`), Projekte/Gaming.
 - **Plattformen:** Instagram, Discord, GitHub, Steam. YouTube ist vorerst raus und kommt vielleicht später wieder dazu.
-- **Discord:** Live-Status über Lanyard.
+- **Discord:** Live-Status über Lanyard, `DISCORD_USER_ID` ist Nicks ID (836150063213707306, Name `.reblady`). Lanyard sieht ihn nur, solange er auf dem Lanyard-Discord-Server ist. Prüfen: `https://api.lanyard.rest/v1/users/<ID>`.
 - **Schriften:** Name in Tiny5 Duo 700 (`--font-title`, Pixelschrift, von Nick nach vielen Vergleichen gewählt). Handle, Chip und Bootscreen in VT323, Motto in Fraunces kursiv, sonst Space Grotesk.
 - **Farben:** Palette „Obsidian Gold, gealtert“, Dark/Light mit Kreis-Überblendung beim Umschalten.
   - Dunkel: Himmel `#4a4f57` → `#5a4a35` → `#1a1712`, Berge `#2a2620`, Boden `#100e0b`, Nebel `#3a352c`, Akzent/Objekte `#e0b46a` / `#8a6a3a`, Text `#f4ecdd`, gedämpfter Text `#c9bda6`
@@ -123,7 +123,7 @@ Wechselt das Theme, wird das Foto in den neuen Farben noch einmal aufgenommen, m
 Die echten Daten fehlen noch. Platzhalter drin lassen, bis Nick sie liefert, und nichts erfinden.
 
 - Motto, Texte für „Über mich“ und „Projekte/Gaming“
-- Alle Social-Links und die `DISCORD_USER_ID`
+- Alle Social-Links
 - Einträge in `data/updates.json`
 - Wo die weiteren 3D-Elemente in der Scroll-Story auftauchen
 - Eigene Domain

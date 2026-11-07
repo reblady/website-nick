@@ -12,10 +12,10 @@ import { createJourney, BAND } from './journey.js';
 const { sfx } = sound;
 
 /* =========================================================
-   Config — placeholders until the real values exist
+   Config
 ========================================================= */
 
-const DISCORD_USER_ID = '000000000000000000';
+const DISCORD_USER_ID = '836150063213707306';
 const LANYARD_POLL_MS = 60000;
 
 // Palette "Obsidian Gold, gealtert" — keep in sync with the tokens in styles.css.
