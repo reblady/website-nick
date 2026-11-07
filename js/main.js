@@ -589,7 +589,14 @@ function draw(now) {
   }
   placeDevice(progress, t);
   animateCrystals(t, dt);
-  ps1.render(stage.deviceScene, stage.deviceCamera);
+  const waterline = phase === 'hero' ? stage.journey.split(journeyProgress) : null;
+  if (waterline === null) {
+    ps1.render(stage.deviceScene, stage.deviceCamera);
+  } else {
+    // Diving in: lake above, underwater below, a refracting waterline between.
+    const { journey } = stage;
+    ps1.renderSplit(stage.deviceScene, stage.deviceCamera, waterline, journey.showAbove, journey.showBelow);
+  }
 }
 requestAnimationFrame(frame);
 

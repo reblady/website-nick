@@ -21,6 +21,11 @@ const POST_VERTEX = /* glsl */ `
 // channel), then a fade towards a solid colour for black/white transitions.
 // uWave is the underwater look: the picture wobbles gently in whole low-res
 // pixels, with large soft patches of light drifting across the top.
+// uSplit (≥ 0) is the half-submerged view while diving in: above that screen
+// height the picture comes from tDiffuse, below it from tUnder (the world
+// under water), and the wavy waterline between them refracts like the edge
+// of the liquid glass: it bends the picture towards itself with a rainbow
+// fringe and catches a bright rim of light.
 const POST_FRAGMENT = /* glsl */ `
   uniform sampler2D tDiffuse;
   uniform vec2 uLow;
@@ -28,7 +33,38 @@ const POST_FRAGMENT = /* glsl */ `
   uniform vec3 uFadeColor;
   uniform float uWave;
   uniform float uTime;
+  uniform sampler2D tUnder;
+  uniform float uSplit;
   varying vec2 vUv;
+
+  vec3 sampleAt(sampler2D tex, vec2 px) {
+    return texture2D(tex, (px + 0.5) / uLow).rgb;
+  }
+
+  vec3 waterline(vec2 px) {
+    float line = uSplit * uLow.y
+      + sin(px.x * 0.045 + uTime * 1.9) * 2.0 + sin(px.x * 0.11 - uTime * 2.7);
+    float d = px.y + 0.5 - line;
+    vec3 c;
+    if (d < 0.0) {
+      // Below: bent up towards the line, strongest at the edge, each colour
+      // channel a little differently.
+      float k = exp(d / 12.0);
+      vec2 off = vec2(sin(px.y * 0.21 + uTime * 3.0) * 2.0 * k, 10.0 * k);
+      c = vec3(
+        sampleAt(tUnder, px + floor(off * 1.2 + 0.5)).r,
+        sampleAt(tUnder, px + floor(off + 0.5)).g,
+        sampleAt(tUnder, px + floor(off * 0.8 + 0.5)).b
+      );
+      c = mix(c, c * vec3(0.8, 1.0, 1.0), 0.4);
+    } else {
+      // Above: pulled down a little towards the line.
+      float k = exp(-d / 7.0);
+      c = sampleAt(tDiffuse, px + vec2(0.0, -floor(4.0 * k + 0.5)));
+    }
+    float rim = 1.0 - smoothstep(0.0, 2.2, abs(d));
+    return c + vec3(0.45, 0.85, 0.85) * rim;
+  }
 
   float bayer(vec2 p) {
     int i = int(mod(p.x, 4.0)) + int(mod(p.y, 4.0)) * 4;
@@ -42,7 +78,7 @@ const POST_FRAGMENT = /* glsl */ `
       sin(px.y * 0.05 + uTime * 1.8) * 2.2 + sin(px.y * 0.13 + uTime * 3.1) * 0.8,
       cos(px.x * 0.045 + uTime * 1.5) * 1.2
     ) * uWave + 0.5);
-    vec3 c = texture2D(tDiffuse, (px + wobble + 0.5) / uLow).rgb;
+    vec3 c = uSplit >= 0.0 ? waterline(px) : texture2D(tDiffuse, (px + wobble + 0.5) / uLow).rgb;
     if (uWave > 0.0) {
       // Large soft patches of light drifting slowly from above.
       float dapple = sin(px.x * 0.021 + uTime * 0.35) * sin(px.y * 0.027 - uTime * 0.28)
@@ -68,6 +104,13 @@ export function createPS1(canvas) {
     generateMipmaps: false,
   });
 
+  // Second picture for the half-submerged view while diving in.
+  const targetUnder = new THREE.WebGLRenderTarget(2, 2, {
+    minFilter: THREE.NearestFilter,
+    magFilter: THREE.NearestFilter,
+    generateMipmaps: false,
+  });
+
   const low = new THREE.Vector2(320, 240);
   // Shared by every PS1 material: vertices snap to this grid in clip space.
   const snap = { value: new THREE.Vector2(160, 120) };
@@ -80,6 +123,8 @@ export function createPS1(canvas) {
       uFadeColor: { value: new THREE.Color(0x000000) },
       uWave: { value: 0 },
       uTime: { value: 0 },
+      tUnder: { value: targetUnder.texture },
+      uSplit: { value: -1 },
     },
     vertexShader: POST_VERTEX,
     fragmentShader: POST_FRAGMENT,
@@ -96,6 +141,7 @@ export function createPS1(canvas) {
     renderer.setSize(w, h);
     const lw = Math.max(1, Math.round(LOW_HEIGHT * w / h));
     target.setSize(lw, LOW_HEIGHT);
+    targetUnder.setSize(lw, LOW_HEIGHT);
     low.set(lw, LOW_HEIGHT);
     snap.value.set(lw / 2, LOW_HEIGHT / 2);
   }
@@ -105,6 +151,22 @@ export function createPS1(canvas) {
     renderer.render(scene, camera);
     renderer.setRenderTarget(null);
     renderer.render(postScene, postCamera);
+  }
+
+  // Half-submerged: the scene is drawn twice, once as seen above the water
+  // and once below (showAbove/showBelow switch what's visible), and joined
+  // at the waterline, `line` = its screen height from the bottom (0…1).
+  function renderSplit(scene, camera, line, showAbove, showBelow) {
+    showAbove();
+    renderer.setRenderTarget(target);
+    renderer.render(scene, camera);
+    showBelow();
+    renderer.setRenderTarget(targetUnder);
+    renderer.render(scene, camera);
+    renderer.setRenderTarget(null);
+    post.uniforms.uSplit.value = line;
+    renderer.render(postScene, postCamera);
+    post.uniforms.uSplit.value = -1;
   }
 
   function renderTo(renderTarget, scene, camera) {
@@ -124,6 +186,7 @@ export function createPS1(canvas) {
     time: post.uniforms.uTime,
     resize,
     render,
+    renderSplit,
     renderTo,
   };
 }
