@@ -4,6 +4,7 @@ import { createHandheld, SCREEN, BODY_WIDTH } from './handheld.js';
 import * as sound from './sound.js';
 import { initGlint } from './glint.js';
 import { initTouchLight } from './touch.js';
+import { initSmoothScroll } from './smooth.js';
 import { initLens } from './lens.js';
 import { initPages, sectionProgress } from './pages.js';
 import { createJourney, BAND } from './journey.js';
@@ -850,6 +851,7 @@ function initDiscordStatus() {
 }
 
 initPages();
+initSmoothScroll();
 initGlint();
 initTouchLight();
 
