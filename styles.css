@@ -34,8 +34,8 @@ html[data-theme='dark'] {
   --accent: #e0b46a;
   --accent-2: #8a6a3a;
 
-  --glass-top: rgba(255, 244, 222, 0.1);
-  --glass-bottom: rgba(40, 34, 26, 0.24);
+  --glass-top: rgba(255, 244, 222, 0.07);
+  --glass-bottom: rgba(40, 34, 26, 0.1);
   --glass-rim-top: rgba(255, 246, 228, 0.5);
   --glass-shadow-edge: rgba(8, 6, 4, 0.55);
   --scanline: rgba(0, 0, 0, 0.09);
@@ -57,8 +57,8 @@ html[data-theme='light'] {
   --accent: #a8492a;
   --accent-2: #e08a62;
 
-  --glass-top: rgba(255, 252, 245, 0.42);
-  --glass-bottom: rgba(255, 238, 215, 0.16);
+  --glass-top: rgba(255, 252, 245, 0.26);
+  --glass-bottom: rgba(255, 238, 215, 0.08);
   --glass-rim-top: rgba(255, 255, 255, 0.85);
   --glass-shadow-edge: rgba(110, 60, 30, 0.28);
   --scanline: rgba(110, 60, 30, 0.06);
@@ -263,8 +263,9 @@ button {
 }
 
 /* ---------------------------------------------------------
-   Liquid glass, pixel cut — refraction (SVG displacement,
-   Chromium only), blur fallback elsewhere, scanlines, a 2px
+   Liquid glass, pixel cut — a light tint and little blur so the
+   scene stays visible, lens refraction at the edges (SVG
+   displacement from js/lens.js, Chromium only), scanlines, a 2px
    bevel rim with a chromatic sheen that turns at a low frame
    rate, and a grid of light cells the cursor tints (canvas
    from js/glint.js).
@@ -277,12 +278,8 @@ button {
   background:
     repeating-linear-gradient(180deg, var(--scanline) 0 1px, transparent 1px 4px),
     linear-gradient(160deg, var(--glass-top), var(--glass-bottom));
-  -webkit-backdrop-filter: blur(14px) saturate(170%);
-  backdrop-filter: blur(14px) saturate(170%);
-}
-
-.has-refraction .glass {
-  backdrop-filter: url(#liquid) blur(6px) saturate(170%);
+  -webkit-backdrop-filter: blur(5px) saturate(160%) brightness(1.04);
+  backdrop-filter: blur(5px) saturate(160%) brightness(1.04);
 }
 
 .glass::before {

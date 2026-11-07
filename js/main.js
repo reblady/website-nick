@@ -3,6 +3,7 @@ import { loadAvatar } from './avatar.js';
 import { createHandheld, SCREEN, BODY_WIDTH } from './handheld.js';
 import * as sound from './sound.js';
 import { initGlint } from './glint.js';
+import { initLens } from './lens.js';
 
 const { sfx } = sound;
 
@@ -796,5 +797,6 @@ function initDiscordStatus() {
 
 initGlint();
 
-// The SVG refraction filter only works as a backdrop-filter in Chromium.
-if (/Chrome\//.test(navigator.userAgent)) root.classList.add('has-refraction');
+// SVG filters only work as a backdrop-filter in Chromium; elsewhere the glass
+// keeps the plain blur from styles.css.
+if (/Chrome\//.test(navigator.userAgent)) initLens();

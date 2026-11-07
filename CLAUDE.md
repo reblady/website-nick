@@ -19,7 +19,7 @@ Ist auch als `reblady-static` in `.claude/launch.json` hinterlegt. `file://` fun
 
 ## Dateien
 
-- `index.html` – Markup: Canvas für die 3D-Bühne, Bootscreen, Kamera-Sucher-Overlay, Steuerknöpfe (Ton, Theme), Hero-Panel und der SVG-Filter für die Glas-Lichtbrechung. Ein Inline-Script im `<head>` setzt `data-theme` vor dem ersten Paint.
+- `index.html` – Markup: Canvas für die 3D-Bühne, Bootscreen, Kamera-Sucher-Overlay, Steuerknöpfe (Ton, Theme), Hero-Panel und ein leeres SVG (`#lensDefs`), in das `lens.js` die Glas-Filter schreibt. Ein Inline-Script im `<head>` setzt `data-theme` vor dem ersten Paint.
 - `styles.css` – alle Styles. Farben als Tokens pro Theme unter `html[data-theme='dark']` / `html[data-theme='light']`. Handy-Layout per `@media (max-aspect-ratio: 105/100)`, passend zur Umschaltung in `restingLayout()` in `main.js`.
 - `js/ps1.js` – PS1-Render-Pipeline: rendert in 240p in ein Render-Target, dann Upscale ohne Filterung mit 4×4-Bayer-Dithering und 15-Bit-Farben, plus Überblendung nach Schwarz/Weiß (`fade`). `ps1Material()` baut Materialien mit Vertex-Snapping (wackelnde Polygone) und affinem Texture-Mapping (verzerrte Texturen). Dazu kleine Helfer für prozedurale Pixel-Texturen.
 - `js/avatar.js` – lädt Nicks Avatar aus `assets/models/nick.glb`, ersetzt die Materialien durch `ps1Material` (Textur × Vertex-Farben) und spielt die Clips ab: „Idle“ in Schleife, „Wave“ einmal per `wave()`, danach bleibt der Arm oben.
@@ -27,6 +27,7 @@ Ist auch als `reblady-static` in `.claude/launch.json` hinterlegt. `file://` fun
 - `js/handheld.js` – lädt die PSP aus `assets/models/psp.glb`, färbt sie über die Materialnamen (`PSP_Shell`, `PSP_Trim`, `PSP_Buttons`, `PSP_Accent` = Theme-Akzent, `PSP_Led`) und legt eine eigene, unterteilte Bildschirm-Fläche mit dem Foto darüber. `SCREEN` (Bildschirmgröße und -tiefe) und `BODY_WIDTH` müssen zum Export passen.
 - `assets/models/psp.glb` – „PlayStation Portable (low poly)“ von Senkinsky (Sketchfab), Lizenz CC BY 4.0. Deshalb steht unten rechts auf der Seite (mobil unter dem Panel) ein Credit mit Links, der muss bleiben. Quelle in `assets/models/psp.blend` (Collection „PSP“, Objekt `PSPBody`).
 - `js/sound.js` – Retro-Sounds, komplett per Web Audio synthetisiert. Ob der Ton aus ist, steht in `localStorage` unter `muted`.
+- `js/lens.js` – Linsen-Brechung fürs Glas: baut pro `.glass`-Element einen SVG-Filter mit passender Displacement-Map (Mitte klar, Kanten ziehen die Szene nach innen, in 4px-Blöcken, leichter Farbsaum pro Kanal) und setzt ihn als `backdrop-filter`. Neu gebaut, wenn sich die Größe ändert.
 - `js/glint.js` – Lichtraster auf den Glas-Elementen: legt in jedes `.glass` ein Canvas und färbt die Zellen um den Cursor ein.
 - `js/main.js` – Ablauf, Kamera, Theme-Umschalter, Discord-Status, Glas-Reflex. Die Konfiguration steht oben in der Datei (`DISCORD_USER_ID`, `PALETTES`, `TIMING`).
 - `data/updates.json` – Inhalte für den späteren Bereich „Aktuelles“ (`date` im ISO-Format, `title`, `text`, optional `link`). Wird noch nicht angezeigt.
@@ -76,7 +77,7 @@ Wechselt das Theme, wird das Foto in den neuen Farben noch einmal aufgenommen, m
 - Flächen, die direkt auf anderen liegen, mit etwas Abstand in z platzieren (≥ 0,005), sonst flackern sie (Z-Fighting).
 - `PALETTES` in `main.js` und die Farb-Tokens in `styles.css` müssen zusammenpassen.
 - Der Bootscreen ist immer dunkel, auch im hellen Theme.
-- Die Lichtbrechung im Glas (`backdrop-filter: url(#liquid)`) funktioniert nur in Chromium. Dafür setzt `main.js` die Klasse `has-refraction`, die anderen Browser bekommen nur Blur.
+- Die Linsen-Brechung (`backdrop-filter: url(#lens-N)`) funktioniert nur in Chromium. `main.js` ruft `initLens()` deshalb nur dort auf, die anderen Browser behalten den Blur aus `styles.css`.
 - Three.js wird als festes Modul `three@0.160.1` von jsDelivr geladen (über die Importmap).
 
 ## Konventionen
@@ -92,7 +93,7 @@ Wechselt das Theme, wird das Foto in den neuen Farben noch einmal aufgenommen, m
 
 - **Ablauf:** eine lange Scroll-Story, bei der beim Scrollen nacheinander Szenen kommen. Bisher gibt es nur die Startsequenz, die Seite scrollt noch nicht.
 - **Retro-Stil:** PS1-Lowpoly-Optik mit dem typischen Texturstil.
-- **Glas:** Liquid Glass ähnlich wie bei Apple, aber mit Retro-Schnitt (Nick hat Variante „B“ gewählt): Pixel-Treppenecken, 2px-Kante mit heller Oberseite, Scanlines, ein festes Raster aus 4px-Zellen (passend zu den Scanlines), das der Cursor in der Akzentfarbe einfärbt: Die Pixel bleiben stehen, das Licht fadet flüssig ein und hinter dem Cursor aus, wird aber ohne echte Transparenz gezeichnet: Jede Zelle ist ganz an oder aus, die Abstufung entsteht durch ein festes Bayer-Dithermuster (wie die Mesh-Transparenz der 32-Bit-Konsolen). Niedrige Bildrate, Nachziehen und harte Helligkeitsstufen hat Nick alle verworfen (Canvas aus `js/glint.js`, nur mit Maus), ein Regenbogen-Rand, der sich ruckelnd dreht, und ein harter Pixel-Schatten am Namen. Die PS1-Szenen liegen im Hintergrund, Text und UI bleiben gut lesbar.
+- **Glas:** Liquid Glass ähnlich wie bei Apple, aber mit Retro-Schnitt (Nick hat Variante „B“ gewählt): Pixel-Treppenecken, nur leichte Tönung und wenig Blur (die Szene soll gut durchscheinen), Linsen-Brechung an den Kanten, 2px-Kante mit heller Oberseite, Scanlines, ein festes Raster aus 4px-Zellen (passend zu den Scanlines), das der Cursor in der Akzentfarbe einfärbt: Die Pixel bleiben stehen, das Licht fadet flüssig ein und hinter dem Cursor aus, wird aber ohne echte Transparenz gezeichnet: Jede Zelle ist ganz an oder aus, die Abstufung entsteht durch ein festes Bayer-Dithermuster (wie die Mesh-Transparenz der 32-Bit-Konsolen). Niedrige Bildrate, Nachziehen und harte Helligkeitsstufen hat Nick alle verworfen (Canvas aus `js/glint.js`, nur mit Maus), ein Regenbogen-Rand, der sich ruckelnd dreht, und ein harter Pixel-Schatten am Namen. Die PS1-Szenen liegen im Hintergrund, Text und UI bleiben gut lesbar.
 - **3D-Elemente:** Glas-Objekte, Nicks Avatar und Retro-Gegenstände (zuerst die PSP, ein DS-artiges Gerät wäre auch denkbar). Der Avatar soll vorerst nur winken, später kommt vielleicht mehr dazu. Wo die Elemente in der Scroll-Story auftauchen, ist noch offen, also vorher fragen.
 - **Sound:** dezente Retro- bzw. Konsolen-Sounds, keine Hintergrundmusik.
 - **Abschnitte (geplant):** Über mich, Aktuelles (aus `data/updates.json`), Projekte/Gaming.
