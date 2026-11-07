@@ -352,6 +352,11 @@ function placeDevice(progress, t) {
   group.rotation.set(rest.rotation.x * progress, rest.rotation.y * progress, rest.rotation.z * progress);
   group.scale.setScalar(THREE.MathUtils.lerp(1, rest.scale, progress));
 
+  // Scrolls away with the hero: at z = 0 one viewport of scroll is exactly
+  // one visible height, so the handheld moves with the page.
+  const visibleHeight = 2 * rest.distance * halfTan(deviceCamera.fov);
+  group.position.y += (window.scrollY / window.innerHeight) * visibleHeight;
+
   // Gentle float and pointer parallax, faded in with the zoom.
   group.position.y += Math.sin(t * 1.1) * 0.035 * progress;
   group.rotation.x += pointer.sy * 0.12 * progress;
@@ -380,7 +385,7 @@ function updateBlockers(t) {
   if (t - blockersAt < 0.25) return;
   blockersAt = t;
   blockers = [];
-  for (const el of document.querySelectorAll('.panel, .counter, .controls, .credits')) {
+  for (const el of document.querySelectorAll('.glass, .controls, .credits')) {
     const r = el.getBoundingClientRect();
     if (!r.width) continue;
     blockers.push({
@@ -579,9 +584,25 @@ function pressStart() {
 
 function reveal() {
   root.classList.add('is-revealed');
-  document.getElementById('hero').removeAttribute('aria-hidden');
+  document.getElementById('content').removeAttribute('aria-hidden');
   initDiscordStatus();
 }
+
+// Always start at the top: the intro plays there.
+history.scrollRestoration = 'manual';
+window.scrollTo(0, 0);
+
+window.addEventListener('scroll', () => {
+  root.classList.toggle('is-scrolled', window.scrollY > 40);
+}, { passive: true });
+
+// Story sections slide in once they come into view.
+const storyObserver = new IntersectionObserver((entries) => {
+  for (const entry of entries) {
+    if (entry.isIntersecting) entry.target.classList.add('is-visible');
+  }
+}, { threshold: 0.35 });
+document.querySelectorAll('.story').forEach((section) => storyObserver.observe(section));
 
 boot.addEventListener('click', pressStart);
 window.addEventListener('keydown', (event) => {

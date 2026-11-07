@@ -83,11 +83,10 @@ html[data-theme='light'] {
 html,
 body {
   margin: 0;
-  height: 100%;
 }
 
 body {
-  overflow: hidden;
+  overflow-x: hidden;
   font-family: var(--font-ui);
   color: var(--ink);
   background: linear-gradient(180deg, var(--sky-1), var(--sky-2) 55%, var(--sky-3));
@@ -95,8 +94,14 @@ body {
 }
 
 p,
-h1 {
+h1,
+h2 {
   margin: 0;
+}
+
+/* No scrolling until the intro has handed over to the page. */
+html:not(.is-revealed) body {
+  overflow: hidden;
 }
 
 button {
@@ -453,9 +458,9 @@ html[data-theme='dark'] .icon--moon {
 --------------------------------------------------------- */
 
 .hero {
-  position: fixed;
-  inset: 0;
+  position: relative;
   z-index: 10;
+  min-height: 100svh;
   display: flex;
   align-items: center;
   padding: var(--gutter);
@@ -535,28 +540,96 @@ html[data-theme='dark'] .icon--moon {
 .chip__dot[data-status='idle'] { background: var(--status-idle); }
 .chip__dot[data-status='dnd'] { background: var(--status-dnd); }
 
+/* Blinks at the bottom of the hero until the page is scrolled. */
+.scroll-hint {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: max(14px, env(safe-area-inset-bottom));
+  font-family: var(--font-pixel);
+  font-size: 18px;
+  letter-spacing: 0.3em;
+  text-align: center;
+  color: var(--ink-dim);
+  opacity: 0;
+  transition: opacity 400ms steps(3);
+}
+
+.is-revealed:not(.is-scrolled) .scroll-hint {
+  opacity: 0.8;
+  animation: blink 1100ms 1200ms steps(1) infinite;
+}
+
 /* ---------------------------------------------------------
-   Credits for third-party models (CC BY needs them visible)
+   Scroll story — sections after the hero, glass panels over
+   the same 3D stage. For now one placeholder.
+--------------------------------------------------------- */
+
+.story {
+  position: relative;
+  z-index: 10;
+  min-height: 100svh;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: var(--gutter);
+  padding-right: max(var(--gutter), env(safe-area-inset-right));
+  pointer-events: none;
+}
+
+.story__panel {
+  width: min(30rem, 44vw);
+  padding: var(--panel-pad);
+  pointer-events: auto;
+  opacity: 0;
+  transform: translateY(40px);
+  transition: opacity 700ms var(--ease-out), transform 900ms var(--ease-out);
+}
+
+.story.is-visible .story__panel {
+  opacity: 1;
+  transform: none;
+}
+
+.story__index {
+  font-family: var(--font-pixel);
+  font-size: 22px;
+  letter-spacing: 0.08em;
+  color: var(--accent);
+}
+
+.story__title {
+  margin-top: 4px;
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: clamp(2.6rem, 5.5vw, 4.6rem);
+  line-height: 0.9;
+  letter-spacing: 0.02em;
+  text-shadow: 4px 4px 0 var(--glass-shadow-edge);
+}
+
+.story__text {
+  margin-top: 16px;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: clamp(1.05rem, 1.6vw, 1.3rem);
+  color: var(--ink-dim);
+}
+
+/* ---------------------------------------------------------
+   Footer with credits for third-party models (CC BY needs
+   them visible)
 --------------------------------------------------------- */
 
 .credits {
-  position: fixed;
-  right: max(16px, env(safe-area-inset-right));
-  bottom: max(12px, env(safe-area-inset-bottom));
-  z-index: 15;
-  max-width: calc(100% - 32px);
+  position: relative;
+  z-index: 10;
+  padding: 24px var(--gutter) max(20px, env(safe-area-inset-bottom));
   font-family: var(--font-pixel);
   font-size: 15px;
   color: var(--ink-dim);
-  text-align: right;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 600ms 800ms ease;
-}
-
-.is-revealed .credits {
+  text-align: center;
   opacity: 0.75;
-  pointer-events: auto;
 }
 
 .credits a {
@@ -575,8 +648,8 @@ html[data-theme='dark'] .icon--moon {
   .hero {
     align-items: flex-end;
     padding: 16px;
-    /* Room for the credits under the panel. */
-    padding-bottom: calc(max(12px, env(safe-area-inset-bottom)) + 44px);
+    /* Room for the scroll hint under the panel. */
+    padding-bottom: calc(max(14px, env(safe-area-inset-bottom)) + 34px);
   }
 
   .panel {
@@ -587,10 +660,12 @@ html[data-theme='dark'] .icon--moon {
     font-size: clamp(2.8rem, 14vw, 4.4rem);
   }
 
-  .credits {
-    left: 16px;
-    right: 16px;
-    max-width: none;
-    text-align: center;
+  .story {
+    justify-content: center;
+    padding: 16px;
+  }
+
+  .story__panel {
+    width: 100%;
   }
 }
