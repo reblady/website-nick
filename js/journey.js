@@ -51,11 +51,16 @@ const MOODS = {
 const SWAP_TO_CAVE = 2.42;
 const SWAP_TO_LAKE = 3.41;
 
-// The lake's surface lies at y −49.6: the camera crosses it at progress 4.13
-// and the lake above swaps for the world under water. From there on the
-// picture wobbles like seen through water (ramping in as the surface passes).
-const SURFACE = 49.6 / BAND;
-const DIVE = { in: SURFACE - 0.04, full: SURFACE + 0.05 };
+// Diving in: the lake's surface lies at y −49.6. Below it a layer of water
+// hangs in front of the camera like the cross-sections: a foamy, wavy
+// waterline on top, then water that thickens to solid teal between −50.4
+// and −53.2 and clears again by −54.5. The lake swaps for the world under
+// water while that solid band fills the screen (camera at −51.8), and the
+// underwater wobble ramps in right after.
+const WATER_TOP = -49.6;
+const WATER_BOTTOM = -54.5;
+const SWAP_UNDER = 51.8 / BAND;
+const DIVE = { in: 51.4 / BAND, full: 52.6 / BAND };
 
 const rand = (min, max) => min + Math.random() * (max - min);
 
@@ -673,6 +678,27 @@ function buildUnderwater(snap, group, y, surfaceY) {
   return { weeds, fish, ripples, causticsMap, floorCaustics, shafts, bubbles, motes, floorY, surfaceY };
 }
 
+// The water layer for diving in: transparent above a wavy line of foam,
+// then teal water whose density (dithered, no real transparency) rises to
+// solid and falls off again towards the bottom.
+function paintWater(g, w, h) {
+  const bayer = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+  const unit = h / (WATER_TOP - WATER_BOTTOM);
+  const density = (d) => (d < 0.8 ? 0.3 + (d / 0.8) * 0.7 : d < 3.6 ? 1 : Math.max(0, 1 - (d - 3.6) / 1.3));
+  for (let x = 0; x < w; x++) {
+    const edge = Math.round(3 + Math.sin((x / w) * Math.PI * 4) * 1.5 + Math.random());
+    for (let y = edge; y < h; y++) {
+      if (y < edge + 2) {
+        g.fillStyle = Math.random() < 0.5 ? '#e6ffff' : '#9af8ff';
+      } else {
+        if (density((y - edge) / unit) <= (bayer[(y % 4) * 4 + (x % 4)] + 0.5) / 16) continue;
+        g.fillStyle = tone(y < edge + 6 && Math.random() < 0.3 ? '#2fa6a4' : '#0e5e5e', 0.9 + Math.random() * 0.2);
+      }
+      g.fillRect(x, y, 1, 1);
+    }
+  }
+}
+
 function points(group, count, color, size, place) {
   const positions = new Float32Array(count * 3);
   for (let i = 0; i < count; i++) positions.set(place(), i * 3);
@@ -692,8 +718,8 @@ export function createJourney(snap, scene, { ambient, key }) {
     scene.add(group);
     return group;
   });
-  const shownFrom = [-1, -1, 0.9, SWAP_TO_CAVE, SWAP_TO_LAKE, SURFACE];
-  const shownTo = [SWAP_TO_CAVE, SWAP_TO_CAVE, SWAP_TO_CAVE, SWAP_TO_LAKE, SURFACE, 9];
+  const shownFrom = [-1, -1, 0.9, SWAP_TO_CAVE, SWAP_TO_LAKE, SWAP_UNDER];
+  const shownTo = [SWAP_TO_CAVE, SWAP_TO_CAVE, SWAP_TO_CAVE, SWAP_TO_LAKE, SWAP_UNDER, 9];
 
   // A fixed set of warm/cold point lights, moved to the crystals of whichever
   // cave is shown (a constant number of lights keeps shaders from
@@ -706,6 +732,8 @@ export function createJourney(snap, scene, { ambient, key }) {
 
   scene.add(crossSection(snap, -26, -32, paintEarth));
   scene.add(crossSection(snap, -38.2, -43.6, paintRock));
+  const waterline = crossSection(snap, WATER_TOP, WATER_BOTTOM, paintWater);
+  scene.add(waterline);
 
   buildStars(worlds[0]);
   const clouds = buildClouds(snap, worlds[1], -BAND);
@@ -770,6 +798,8 @@ export function createJourney(snap, scene, { ambient, key }) {
       if (cloud.position.x > 22) cloud.position.x = -22;
     }
 
+    // The waterline drifts sideways a little.
+    waterline.material.map.offset.x = t * 0.03;
     if (worlds[3].visible) animateCave(t, dt);
     if (worlds[4].visible) animateLake(t, dt);
     if (worlds[5].visible) animateUnderwater(t, dt);
