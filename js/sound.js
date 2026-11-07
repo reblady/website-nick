@@ -127,6 +127,12 @@ export const sfx = {
     tone({ freq: 990, to: 1320, duration: 0.2, gain: 0.03, type: 'triangle', delay: 0.12 });
   },
 
+  // Menu "select" blip for jumping to another section.
+  page() {
+    tone({ freq: 660, duration: 0.06, gain: 0.04 });
+    tone({ freq: 990, duration: 0.09, gain: 0.04, delay: 0.06 });
+  },
+
   theme(next) {
     const notes = next === 'dark' ? [784, 523.25] : [523.25, 784];
     tone({ freq: notes[0], duration: 0.1, gain: 0.04 });

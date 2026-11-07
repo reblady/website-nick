@@ -99,6 +99,15 @@ h2 {
   margin: 0;
 }
 
+/* No browser scrollbar: the page buttons (js/pages.js) show where you are. */
+html {
+  scrollbar-width: none;
+}
+
+html::-webkit-scrollbar {
+  display: none;
+}
+
 /* No scrolling until the intro has handed over to the page. */
 html:not(.is-revealed) body {
   overflow: hidden;
@@ -352,6 +361,113 @@ button {
 .is-revealed .controls {
   opacity: 1;
   pointer-events: auto;
+}
+
+/* ---------------------------------------------------------
+   Page buttons — one small pixel socket per section. The lit
+   fill stays inside the sockets: while scrolling it drains out
+   of one and grows in the next (--fill, set by js/pages.js).
+   A click morphs over to that section. Vertical on the right
+   on desktop, a row at the top on phones.
+--------------------------------------------------------- */
+
+.pages {
+  --socket: 10px;
+  position: fixed;
+  z-index: 24;
+  top: 50%;
+  right: max(10px, env(safe-area-inset-right));
+  display: flex;
+  flex-direction: column;
+  transform: translateY(-50%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 600ms 400ms ease;
+}
+
+.is-revealed .pages {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Bigger hit area than the socket you see. */
+.pages__button {
+  --fill: 0;
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+}
+
+.pages__button::before,
+.pages__button::after {
+  content: '';
+  grid-area: 1 / 1;
+  width: var(--socket);
+  height: var(--socket);
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--ink-dim) 55%, transparent);
+  transition: box-shadow 150ms steps(2);
+}
+
+.pages__button:hover::before {
+  box-shadow: inset 0 0 0 2px var(--ink);
+}
+
+.pages__button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.pages__button::after {
+  background: var(--accent);
+  box-shadow:
+    inset 2px 2px 0 color-mix(in srgb, var(--accent) 45%, #fffaf0),
+    inset -2px -2px 0 var(--accent-2),
+    0 0 8px color-mix(in srgb, var(--accent) 55%, transparent);
+  opacity: var(--fill);
+  transform: scale(var(--fill));
+}
+
+/* Jumping between sections: the old view is pulled away in the direction
+   you'd scroll and the new one slides in after it, both stretched and
+   blurred by the speed (--page-dir: 1 down, -1 up). The fixed UI stays. */
+html.is-paging .pages { view-transition-name: pages; }
+html.is-paging .controls { view-transition-name: controls; }
+html.is-paging .counter { view-transition-name: counter; }
+
+html.is-paging::view-transition-old(root) {
+  animation: page-out 640ms cubic-bezier(0.7, 0, 0.3, 1) both;
+}
+
+html.is-paging::view-transition-new(root) {
+  animation: page-in 640ms cubic-bezier(0.7, 0, 0.3, 1) both;
+}
+
+html.is-paging::view-transition-old(pages),
+html.is-paging::view-transition-new(pages) {
+  animation-duration: 640ms;
+}
+
+@keyframes page-out {
+  60% {
+    filter: blur(12px);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(calc(var(--page-dir, 1) * -45%)) scaleY(1.12);
+    filter: blur(14px);
+  }
+}
+
+@keyframes page-in {
+  from {
+    opacity: 0;
+    transform: translateY(calc(var(--page-dir, 1) * 45%)) scaleY(1.12);
+    filter: blur(14px);
+  }
+  40% {
+    filter: blur(12px);
+  }
 }
 
 /* ---------------------------------------------------------
@@ -667,5 +783,13 @@ html[data-theme='dark'] .icon--moon {
 
   .story__panel {
     width: 100%;
+  }
+
+  .pages {
+    top: calc(max(16px, env(safe-area-inset-top)) + 11px);
+    right: auto;
+    left: 50%;
+    flex-direction: row;
+    transform: translateX(-50%);
   }
 }

@@ -28,6 +28,7 @@ Ist auch als `reblady-static` in `.claude/launch.json` hinterlegt. `file://` fun
 - `assets/models/psp.glb` – „PlayStation Portable (low poly)“ von Senkinsky (Sketchfab), Lizenz CC BY 4.0. Deshalb steht im Footer ganz unten ein Credit mit Links, der muss bleiben. Quelle in `assets/models/psp.blend` (Collection „PSP“, Objekt `PSPBody`).
 - `js/sound.js` – Retro-Sounds, komplett per Web Audio synthetisiert. Ob der Ton aus ist, steht in `localStorage` unter `muted`.
 - `js/lens.js` – Linsen-Brechung fürs Glas: baut pro `.glass`-Element einen SVG-Filter mit passender Displacement-Map (Mitte klar, Kanten ziehen die Szene nach innen, in 4px-Blöcken, leichter Farbsaum pro Kanal) und setzt ihn als `backdrop-filter`. Neu gebaut, wenn sich die Größe ändert.
+- `js/pages.js` – Seiten-Knöpfe statt Scrollbar (die native ist per `scrollbar-width: none` / `::-webkit-scrollbar` ausgeblendet): pro Abschnitt mit `data-page` eine kleine Pixel-Fassung ohne Schrift (der Name steht nur im `aria-label`). Die goldene Füllung bleibt immer in den Fassungen: Beim Scrollen leert sich die eine und die nächste füllt sich (`--fill`). Nick wollte ausdrücklich keine Markierung, die zwischen den Fassungen wandert. Ein Klick wechselt per View Transition (`is-paging` + `--page-dir`): Die alte Ansicht wird kräftig in Scroll-Richtung weggezogen, die neue gleitet hinterher, beide gestreckt und unscharf. Knöpfe und Zähler bleiben stehen. Ohne View Transitions wird weich gescrollt. Desktop: Spalte rechts in der Mitte, Handy: Reihe oben zwischen Zähler und Knöpfen.
 - `js/glint.js` – Lichtraster auf den Glas-Elementen: legt in jedes `.glass` ein Canvas und färbt die Zellen um den Cursor ein.
 - `js/main.js` – Ablauf, Kamera, Theme-Umschalter, Discord-Status, Glas-Reflex. Die Konfiguration steht oben in der Datei (`DISCORD_USER_ID`, `PALETTES`, `TIMING`).
 - `data/updates.json` – Inhalte für den späteren Bereich „Aktuelles“ (`date` im ISO-Format, `title`, `text`, optional `link`). Wird noch nicht angezeigt.
@@ -71,7 +72,7 @@ Danach ist die Seite scrollbar (vorher sperrt `html:not(.is-revealed) body` das 
 
 - Die PSP scrollt mit dem Hero nach oben weg (`placeDevice()` verschiebt sie um `scrollY` in Weltkoordinaten). Kristalle und Himmel bleiben als fester Hintergrund stehen.
 - Ein blinkendes „▼ SCROLL ▼“ unten im Hero verschwindet, sobald gescrollt wurde (`is-scrolled`).
-- Danach folgen `.story`-Abschnitte (je ein Glas-Panel, gleitet per IntersectionObserver rein, `is-visible`). Bisher gibt es nur **einen Platzhalter** („02 – KOMMT NOCH“), bis Nick entscheidet, was dort hinkommt. Abschnitte haben `pointer-events: none`, nur die Panels nicht, damit Kristalle daneben klickbar bleiben.
+- Danach folgen `.story`-Abschnitte (mit `data-page`, damit sie einen Seiten-Knopf bekommen) (je ein Glas-Panel, gleitet per IntersectionObserver rein, `is-visible`). Bisher gibt es nur **einen Platzhalter** („02 – KOMMT NOCH“), bis Nick entscheidet, was dort hinkommt. Abschnitte haben `pointer-events: none`, nur die Panels nicht, damit Kristalle daneben klickbar bleiben.
 
 Wechselt das Theme, wird das Foto in den neuen Farben noch einmal aufgenommen, mit derselben eingefrorenen Pose.
 
