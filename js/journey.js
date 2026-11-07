@@ -27,7 +27,7 @@ const MOODS = {
     // Land at dusk, the same mood as the avatar's world
     { sky: ['#4a4f57', '#5a4a35', '#1a1712'], fog: '#3a352c', near: 12, far: 60, ambient: '#9a9080', sun: '#ffe3b3' },
     // Cave, lit by warm crystal glow
-    { sky: ['#0d0a08', '#18130f', '#080605'], fog: '#130f0c', near: 4, far: 24, ambient: '#6a5a48', sun: '#e0b46a' },
+    { sky: ['#0d0a08', '#18130f', '#080605'], fog: '#130f0c', near: 5, far: 28, ambient: '#8a7660', sun: '#e0b46a' },
     // Underground lake, bioluminescent teal
     { sky: ['#02100f', '#062424', '#010606'], fog: '#052a2a', near: 6, far: 40, ambient: '#3f8a8a', sun: '#8af0ff' },
     // Under water: thick teal haze, light from the surface above
@@ -159,27 +159,118 @@ function glowCrystals(snap, group, color, count, y, spread) {
   }
 }
 
-function buildCave(snap, group, y) {
-  const rock = ps1Material(snap, { map: speckle('#3b322b', 0.25) });
-  const ceiling = y + 4;
-  const floor = y - 2.5;
-  spikes(snap, group, rock, 34, ceiling, true, 12);
-  spikes(snap, group, rock, 26, floor, false, 12);
-
-  // Walls on both sides and a back wall.
-  const boulder = new THREE.DodecahedronGeometry(1, 0);
-  for (let i = 0; i < 18; i++) {
-    const wall = new THREE.Mesh(boulder, rock);
-    const side = i % 2 ? 1 : -1;
-    wall.scale.set(rand(2, 3.5), rand(3, 5), rand(2, 3.5));
-    wall.position.set(side * rand(8, 12), y + rand(-2, 3), rand(-20, -2));
-    group.add(wall);
+// A cluster of glowing crystals fanning out from one spot.
+function crystalCluster(material, size) {
+  const cluster = new THREE.Group();
+  const count = 3 + Math.floor(Math.random() * 4);
+  for (let i = 0; i < count; i++) {
+    const crystal = new THREE.Mesh(new THREE.OctahedronGeometry(1), material);
+    const length = rand(0.5, 1.1) * size;
+    crystal.scale.set(length * 0.28, length, length * 0.28);
+    crystal.position.y = length * 0.6;
+    const tilt = new THREE.Group();
+    tilt.rotation.set(rand(-0.5, 0.5), rand(0, Math.PI), (i - count / 2) * 0.35);
+    tilt.add(crystal);
+    cluster.add(tilt);
   }
-  const back = new THREE.Mesh(new THREE.BoxGeometry(60, 12, 1, 6, 2, 1), rock);
-  back.position.set(0, y + 1, -26);
-  group.add(back);
+  return cluster;
+}
 
-  glowCrystals(snap, group, '#e0b46a', 12, floor + 0.3, 7);
+// Soft round light pool, dithered like everything else (light on water).
+function poolTexture() {
+  const bayer = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+  return pixelTexture(32, (g, size) => {
+    g.fillStyle = '#ffffff';
+    for (let y = 0; y < size; y++) {
+      for (let x = 0; x < size; x++) {
+        const r = Math.hypot(x + 0.5 - size / 2, y + 0.5 - size / 2) / (size / 2);
+        if (r < 1 && (1 - r) ** 1.4 > (bayer[(y % 4) * 4 + (x % 4)] + 0.5) / 16) g.fillRect(x, y, 1, 1);
+      }
+    }
+  });
+}
+
+// First cave: an arched tunnel of warm rock running into the dark, an
+// uneven floor, stalactites and stalagmites (some grown into columns),
+// clusters of amber crystals whose light pools on the rock, dust in the air
+// and drops falling from the ceiling. Starts at z = −1, behind the
+// cross-section of the earth.
+function buildCave(snap, group, y) {
+  const floorY = y - 2.5;
+  const radius = 9;
+  const rock = ps1Material(snap, { map: speckle('#6a523c', 0.3) });
+  rock.side = THREE.DoubleSide;
+  const stone = ps1Material(snap, { map: speckle('#7a6550', 0.25) });
+
+  const vault = new THREE.Mesh(new THREE.CylinderGeometry(radius, radius, 46, 14, 8, true, -Math.PI / 2, Math.PI), rock);
+  vault.material.map.repeat.set(10, 12);
+  vault.rotation.x = Math.PI / 2;
+  vault.position.set(0, floorY, -24);
+  group.add(vault);
+
+  // Floor: a plane with bumps, wider than the tunnel.
+  const floorGeometry = new THREE.PlaneGeometry(2 * radius + 2, 46, 14, 30);
+  const bumps = floorGeometry.attributes.position;
+  for (let i = 0; i < bumps.count; i++) {
+    const x = bumps.getX(i);
+    const edge = Math.max(0, Math.abs(x) - radius + 3);
+    bumps.setZ(i, rand(0, 0.35) + edge * 0.6);
+  }
+  const floor = new THREE.Mesh(floorGeometry, ps1Material(snap, { map: speckle('#3a2d22', 0.3) }));
+  floor.material.map.repeat.set(6, 14);
+  floor.rotation.x = -Math.PI / 2;
+  floor.position.set(0, floorY, -24);
+  group.add(floor);
+
+  // Stalactites follow the arch, stalagmites grow from the floor; where one
+  // stands right below another they meet as a column.
+  const cone = (r, h) => new THREE.ConeGeometry(r, h, 6);
+  for (let i = 0; i < 40; i++) {
+    const angle = rand(0.15, 0.85) * Math.PI;
+    const length = rand(0.6, 2.6) * (0.5 + Math.sin(angle) * 0.7);
+    const spike = new THREE.Mesh(cone(rand(0.15, 0.45), length), stone);
+    spike.rotation.x = Math.PI;
+    spike.position.set(Math.cos(angle) * (radius - 0.3), floorY + Math.sin(angle) * (radius - 0.3) - length / 2, rand(-44, -3));
+    group.add(spike);
+  }
+  for (let i = 0; i < 18; i++) {
+    const height = rand(0.5, 1.8);
+    const spike = new THREE.Mesh(cone(rand(0.2, 0.5), height), stone);
+    spike.position.set(rand(-6.5, 6.5), floorY + height / 2, rand(-40, -3));
+    group.add(spike);
+  }
+  for (let i = 0; i < 4; i++) {
+    const x = rand(-5.5, 5.5);
+    const z = rand(-30, -8);
+    const top = floorY + Math.sqrt(radius * radius - x * x) - 0.3;
+    const reach = (top - floorY) / 2 + 0.3;
+    const down = new THREE.Mesh(cone(rand(0.45, 0.7), reach), stone);
+    down.rotation.x = Math.PI;
+    down.position.set(x, top - reach / 2, z);
+    const up = new THREE.Mesh(cone(rand(0.55, 0.8), reach), stone);
+    up.position.set(x, floorY + reach / 2, z);
+    group.add(down, up);
+  }
+
+  // Amber crystal clusters on the floor and the lower walls.
+  const amber = ps1Material(snap, { color: '#ffc46a', unlit: true });
+  const glowSpots = [];
+  for (let i = 0; i < 7; i++) {
+    const side = i % 2 ? 1 : -1;
+    const cluster = crystalCluster(amber, rand(0.8, 1.4));
+    const x = side * rand(3, 7);
+    const z = -4 - i * 5 - rand(0, 2);
+    cluster.position.set(x, floorY + Math.max(0, Math.abs(x) - radius + 3) * 0.6, z);
+    cluster.rotation.z = -side * 0.3;
+    group.add(cluster);
+    glowSpots.push(cluster.position.clone().add(new THREE.Vector3(-side * 0.6, 0.8, 0)));
+  }
+
+  // Dust hanging in the air and drops falling from the ceiling.
+  const dust = points(group, 90, '#c89c64', 1, () => [rand(-7, 7), rand(floorY, floorY + 7), rand(-30, -2)]);
+  const drops = points(group, 24, '#9ad0d8', 1, () => [rand(-6, 6), rand(floorY, floorY + 7), rand(-30, -3)]);
+
+  return { dust, drops, floorY, top: floorY + 7, glowSpots };
 }
 
 // Underground lake after Nick's references: a vaulted cave lit in cold
@@ -278,6 +369,40 @@ function buildLake(snap, group, y) {
   }
   glowCrystals(snap, above, '#7ee0d0', 8, waterY + 0.6, 9);
 
+  // Crystal clusters high on the walls, each throwing a beam of light down
+  // onto the water, where it leaves a glowing pool.
+  const cyan = ps1Material(snap, { color: '#8af6ff', unlit: true });
+  const poolMaterial = lightMaterial('#9af8ff', 0.5, poolTexture());
+  const beams = [];
+  const glowSpots = [];
+  for (let i = 0; i < 7; i++) {
+    const side = i % 2 ? 1 : -1;
+    const angle = side > 0 ? rand(0.2, 0.4) * Math.PI : rand(0.6, 0.8) * Math.PI;
+    const origin = new THREE.Vector3(Math.cos(angle) * 13.6, waterY + Math.sin(angle) * 13.6, -6 - i * 3.6);
+    const cluster = crystalCluster(cyan, rand(1, 1.6));
+    cluster.position.copy(origin);
+    // Point the cluster into the cave.
+    cluster.rotation.z = angle - Math.PI / 2 + Math.PI;
+    above.add(cluster);
+    glowSpots.push(origin.clone().add(new THREE.Vector3(-side * 1.2, -1, 0)));
+
+    const target = new THREE.Vector3(origin.x * rand(0.2, 0.5), waterY, origin.z + rand(-3, 3));
+    const length = origin.distanceTo(target);
+    const beamGeometry = new THREE.ConeGeometry(rand(0.45, 0.8), length, 8, 1, true);
+    beamGeometry.translate(0, -length / 2, 0);
+    const beam = new THREE.Mesh(beamGeometry, lightMaterial('#7ef0ff', 0.07));
+    beam.position.copy(origin);
+    beam.quaternion.setFromUnitVectors(new THREE.Vector3(0, -1, 0), target.clone().sub(origin).normalize());
+    beam.userData.phase = rand(0, Math.PI * 2);
+    group.add(beam);
+    beams.push(beam);
+
+    const pool = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 2.6), poolMaterial);
+    pool.rotation.x = -Math.PI / 2;
+    pool.position.set(target.x, waterY + 0.05, target.z);
+    group.add(pool);
+  }
+
   // Reflection: everything above mirrored in the water, darker.
   const reflection = above.clone(true);
   const dimmed = new Map();
@@ -312,7 +437,7 @@ function buildLake(snap, group, y) {
   const specks = points(group, 170, '#7af6ff', 2, () => [rand(-12, 12), waterY + 0.05, rand(-34, -2)]);
   const mist = points(group, 90, '#3f9c98', 1, () => [rand(-12, 12), rand(waterY, waterY + 9), rand(-34, -2)]);
 
-  return { water, fallTexture, specks, mist, waterY };
+  return { water, fallTexture, specks, mist, waterY, beams, glowSpots };
 }
 
 // Cutaway of the ground: a pixel texture on a plane facing the camera,
@@ -570,13 +695,22 @@ export function createJourney(snap, scene, { ambient, key }) {
   const shownFrom = [-1, -1, 0.9, SWAP_TO_CAVE, SWAP_TO_LAKE, SURFACE];
   const shownTo = [SWAP_TO_CAVE, SWAP_TO_CAVE, SWAP_TO_CAVE, SWAP_TO_LAKE, SURFACE, 9];
 
+  // A fixed set of warm/cold point lights, moved to the crystals of whichever
+  // cave is shown (a constant number of lights keeps shaders from
+  // recompiling when the worlds swap).
+  const crystalLights = Array.from({ length: 4 }, () => {
+    const light = new THREE.PointLight('#ffb84d', 0, 9, 1.6);
+    scene.add(light);
+    return light;
+  });
+
   scene.add(crossSection(snap, -26, -32, paintEarth));
   scene.add(crossSection(snap, -38.2, -43.6, paintRock));
 
   buildStars(worlds[0]);
   const clouds = buildClouds(snap, worlds[1], -BAND);
   buildLand(snap, worlds[2], -2 * BAND);
-  buildCave(snap, worlds[3], -3 * BAND);
+  const cave = buildCave(snap, worlds[3], -3 * BAND);
   const lake = buildLake(snap, worlds[4], -4 * BAND);
   const deep = buildUnderwater(snap, worlds[5], -5 * BAND, lake.waterY);
   const ripple = lake.water.geometry.attributes.position;
@@ -636,8 +770,36 @@ export function createJourney(snap, scene, { ambient, key }) {
       if (cloud.position.x > 22) cloud.position.x = -22;
     }
 
+    if (worlds[3].visible) animateCave(t, dt);
     if (worlds[4].visible) animateLake(t, dt);
     if (worlds[5].visible) animateUnderwater(t, dt);
+    placeLights(t);
+  }
+
+  // Crystal lights: on the four front crystals of the cave or the lake
+  // (glowSpots run front to back), flickering a little.
+  function placeLights(t) {
+    const spots = worlds[3].visible ? cave.glowSpots : worlds[4].visible ? lake.glowSpots : [];
+    const color = worlds[3].visible ? '#ffb84d' : '#6ff0ff';
+    crystalLights.forEach((light, i) => {
+      const spot = spots[i];
+      light.intensity = spot ? 7 + Math.sin(t * 2.3 + i * 1.7) * 1.2 : 0;
+      if (spot) {
+        light.position.copy(spot);
+        light.color.set(color);
+      }
+    });
+  }
+
+  function animateCave(t, dt) {
+    drift(cave.dust, (p, i) => {
+      p.setX(i, p.getX(i) + Math.sin(t * 0.4 + i) * dt * 0.08);
+      p.setY(i, p.getY(i) + Math.cos(t * 0.3 + i) * dt * 0.05);
+    });
+    drift(cave.drops, (p, i) => {
+      const y = p.getY(i) - dt * 5;
+      p.setY(i, y < cave.floorY ? cave.top - Math.random() : y);
+    });
   }
 
   function drift(cloud, step) {
@@ -655,6 +817,9 @@ export function createJourney(snap, scene, { ambient, key }) {
     ripple.needsUpdate = true;
 
     lake.fallTexture.offset.y += dt * 1.6;
+    for (const beam of lake.beams) {
+      beam.material.opacity = 0.06 + Math.sin(t * 0.9 + beam.userData.phase) * 0.025;
+    }
     drift(lake.specks, (p, i) => {
       const x = p.getX(i) + dt * (0.15 + (i % 5) * 0.05);
       p.setX(i, x > 12 ? -12 : x);

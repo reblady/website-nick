@@ -19,8 +19,8 @@ const POST_VERTEX = /* glsl */ `
 
 // Nearest-neighbour upscale + 4x4 Bayer dither + 15-bit colour (5 bits per
 // channel), then a fade towards a solid colour for black/white transitions.
-// uWave is the underwater look: the picture wobbles in whole low-res pixels
-// and bands of refracted light ripple across it, brighter towards the top.
+// uWave is the underwater look: the picture wobbles gently in whole low-res
+// pixels, with large soft patches of light drifting across the top.
 const POST_FRAGMENT = /* glsl */ `
   uniform sampler2D tDiffuse;
   uniform vec2 uLow;
@@ -39,18 +39,15 @@ const POST_FRAGMENT = /* glsl */ `
   void main() {
     vec2 px = floor(vUv * uLow);
     vec2 wobble = floor(vec2(
-      sin(px.y * 0.06 + uTime * 2.2) * 3.0 + sin(px.y * 0.15 + uTime * 3.7) * 1.2,
-      cos(px.x * 0.05 + uTime * 1.8) * 1.6
+      sin(px.y * 0.05 + uTime * 1.8) * 2.2 + sin(px.y * 0.13 + uTime * 3.1) * 0.8,
+      cos(px.x * 0.045 + uTime * 1.5) * 1.2
     ) * uWave + 0.5);
     vec3 c = texture2D(tDiffuse, (px + wobble + 0.5) / uLow).rgb;
     if (uWave > 0.0) {
-      // Two interfering wave fields; light focuses into thin wavy lines
-      // where they cancel out, like caustics drifting over everything.
-      // Each field is bent by the other, so the web looks organic.
-      float w = abs(sin(px.x * 0.083 + sin(px.y * 0.05 + uTime * 0.7) * 1.6 + uTime)
-        + sin(px.y * 0.097 + sin(px.x * 0.041 - uTime * 0.5) * 1.9 - uTime * 0.8));
-      float focus = 1.0 - smoothstep(0.0, 0.16, w);
-      c += vec3(0.07, 0.18, 0.18) * focus * uWave * vUv.y * vUv.y;
+      // Large soft patches of light drifting slowly from above.
+      float dapple = sin(px.x * 0.021 + uTime * 0.35) * sin(px.y * 0.027 - uTime * 0.28)
+        + 0.5 * sin((px.x + px.y) * 0.013 + uTime * 0.45);
+      c += vec3(0.03, 0.07, 0.07) * smoothstep(0.4, 1.3, dapple) * uWave * vUv.y;
       c = mix(c, c * vec3(0.8, 1.0, 1.0), uWave * 0.4);
     }
     c += bayer(px) / 31.0;
