@@ -6,9 +6,9 @@
 
 import { createLightGrid, spot } from './glint.js';
 
-const RING_SECONDS = 0.5;
-const RING_RADIUS = 120;
-const RING_WIDTH = 16;
+const RING_SECONDS = 0.4;
+const RING_RADIUS = 72;
+const RING_WIDTH = 10;
 
 export function initTouchLight() {
   const canvas = document.createElement('canvas');
