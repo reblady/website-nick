@@ -98,7 +98,7 @@ Wechselt das Theme, wird das Foto in den neuen Farben noch einmal aufgenommen, m
 
 ## Design-Richtung
 
-- **Ablauf:** eine lange Scroll-Story, bei der beim Scrollen nacheinander Szenen kommen. Bisher gibt es die Startsequenz und einen Platzhalter-Abschnitt darunter.
+- **Ablauf:** eine lange Scroll-Story, bei der beim Scrollen nacheinander Szenen kommen. Bisher gibt es die Startsequenz und einen Platzhalter-Abschnitt darunter. Geplante Reise von oben nach unten (Nicks Idee): Der Hero ist der **Weltraum**, dann geht es runter in die **Atmosphäre**, an **Land**, in eine **Höhle** und zuletzt an einen **unterirdischen See**.
 - **Retro-Stil:** PS1-Lowpoly-Optik mit dem typischen Texturstil.
 - **Glas:** Liquid Glass ähnlich wie bei Apple, aber mit Retro-Schnitt (Nick hat Variante „B“ gewählt): Pixel-Treppenecken, nur leichte Tönung und wenig Blur (die Szene soll gut durchscheinen), Linsen-Brechung an den Kanten, 2px-Kante mit heller Oberseite, Scanlines, ein festes Raster aus 4px-Zellen (passend zu den Scanlines), das der Cursor in der Akzentfarbe einfärbt: Die Pixel bleiben stehen, das Licht fadet flüssig ein und hinter dem Cursor aus, wird aber ohne echte Transparenz gezeichnet: Jede Zelle ist ganz an oder aus, die Abstufung entsteht durch ein festes Bayer-Dithermuster (wie die Mesh-Transparenz der 32-Bit-Konsolen). Niedrige Bildrate, Nachziehen und harte Helligkeitsstufen hat Nick alle verworfen (Canvas aus `js/glint.js`, nur mit Maus), ein Regenbogen-Rand, der sich ruckelnd dreht, und ein harter Pixel-Schatten am Namen. Die PS1-Szenen liegen im Hintergrund, Text und UI bleiben gut lesbar.
 - **3D-Elemente:** Glas-Objekte, Nicks Avatar und Retro-Gegenstände (zuerst die PSP, ein DS-artiges Gerät wäre auch denkbar). Der Avatar soll vorerst nur winken, später kommt vielleicht mehr dazu. Wo die Elemente in der Scroll-Story auftauchen, ist noch offen, also vorher fragen.
@@ -122,3 +122,16 @@ Die echten Daten fehlen noch. Platzhalter drin lassen, bis Nick sie liefert, und
 - Einträge in `data/updates.json`
 - Wo die weiteren 3D-Elemente in der Scroll-Story auftauchen
 - Eigene Domain
+
+## Nicks Ideen-Liste (Stand 7. November 2026)
+
+Noch nicht umgesetzt, Reihenfolge noch nicht festgelegt. Vor dem Umsetzen nachfragen, wie es genau aussehen soll.
+
+- Scroll-Story Weltraum → Atmosphäre → Land → Höhle → unterirdischer See (siehe Design-Richtung)
+- Quietsche-Enten mit Sounds zum Anklicken im unterirdischen See
+- Box-Minispiel (vielleicht)
+- Touch-Effekt auf dem Handy (Gegenstück zum Cursor-Licht, das es nur mit Maus gibt)
+- Scroll-Animation nach unten mit Wusch-Sound, vielleicht sogar Musik (bisher gilt: keine Hintergrundmusik)
+- Avatar fixen (was genau, ist noch offen)
+- Sounds eventuell überarbeiten
+- Farben anpassen (welche, ist noch offen)
