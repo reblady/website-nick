@@ -5,6 +5,8 @@ import * as sound from './sound.js';
 import { initGlint } from './glint.js';
 import { initTouchLight } from './touch.js';
 import { initSmoothScroll } from './smooth.js';
+import { watchLanyard } from './lanyard.js';
+import { showSpotify } from './player.js';
 import { initLens } from './lens.js';
 import { initPages, sectionProgress } from './pages.js';
 import { createJourney, BAND } from './journey.js';
@@ -16,7 +18,6 @@ const { sfx } = sound;
 ========================================================= */
 
 const DISCORD_USER_ID = '836150063213707306';
-const LANYARD_POLL_MS = 60000;
 
 // Palette "Obsidian Gold, gealtert" — keep in sync with the tokens in styles.css.
 const PALETTES = {
@@ -814,7 +815,7 @@ document.addEventListener('pointerover', (event) => {
 });
 
 /* =========================================================
-   Discord live status via Lanyard
+   Discord live status and Spotify via Lanyard
 ========================================================= */
 
 const STATUS_LABELS = { online: 'Online', idle: 'Abwesend', dnd: 'Nicht stören', offline: 'Offline' };
@@ -824,30 +825,19 @@ function setDiscordStatus(status, label) {
   document.getElementById('discordText').textContent = label;
 }
 
-async function fetchDiscordStatus() {
-  try {
-    const res = await fetch(`https://api.lanyard.rest/v1/users/${DISCORD_USER_ID}`);
-    const json = await res.json();
-    if (!json.success) throw new Error('Lanyard');
-    const status = json.data.discord_status || 'offline';
-    const game = (json.data.activities || []).find((a) => a.type === 0);
-    const label = STATUS_LABELS[status] || 'Offline';
-    setDiscordStatus(status, game && status !== 'offline' ? `${label} · ${game.name}` : label);
-  } catch (e) {
-    setDiscordStatus('offline', 'Status nicht verfügbar');
-  }
+function showPresence(data) {
+  const status = data.discord_status || 'offline';
+  const game = (data.activities || []).find((a) => a.type === 0);
+  const label = STATUS_LABELS[status] || 'Offline';
+  setDiscordStatus(status, game && status !== 'offline' ? `${label} · ${game.name}` : label);
+  showSpotify(data.listening_to_spotify ? data.spotify : null);
 }
 
 let discordStarted = false;
 function initDiscordStatus() {
   if (discordStarted) return;
   discordStarted = true;
-  if (/^0+$/.test(DISCORD_USER_ID)) {
-    setDiscordStatus('offline', 'Discord-Status folgt');
-    return;
-  }
-  fetchDiscordStatus();
-  setInterval(fetchDiscordStatus, LANYARD_POLL_MS);
+  watchLanyard(DISCORD_USER_ID, showPresence, () => setDiscordStatus('offline', 'Status nicht verfügbar'));
 }
 
 initPages();

@@ -81,6 +81,16 @@
       <span class="chip__dot" id="discordDot" data-status="loading"></span>
       <span id="discordText">Discord-Status wird geladen…</span>
     </div>
+    <a class="glass player" id="player" href="https://open.spotify.com" target="_blank" rel="noopener" hidden>
+      <canvas class="player__art" width="24" height="24" aria-hidden="true"></canvas>
+      <span class="player__info">
+        <span class="player__label"><span class="player__eq" aria-hidden="true"><i></i><i></i><i></i></span>LÄUFT GERADE</span>
+        <span class="player__title"><span id="playerTitle"></span></span>
+        <span class="player__artist" id="playerArtist"></span>
+        <span class="player__bar" aria-hidden="true"><span class="player__fill" id="playerFill"></span></span>
+      </span>
+      <span class="player__time" id="playerTime" aria-hidden="true"></span>
+    </a>
   </div>
   <p class="scroll-hint" aria-hidden="true">▼ SCROLL ▼</p>
 </section>
